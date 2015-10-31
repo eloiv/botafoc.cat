@@ -1,0 +1,36 @@
+<?php
+
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_page_attachments().
+ */
+function hreflang_page_attachments(array &$page) {
+  // No need to add hreflang tags for 404/403 pages.
+  if (\Drupal::request()->attributes->has('exception')) {
+    return;
+  }
+  $language_manager = \Drupal::getContainer()->get('language_manager');
+  $route = \Drupal::service('path.matcher')->isFrontPage() ? '<front>' : '<current>';
+  $links = $language_manager->getLanguageSwitchLinks(LanguageInterface::TYPE_INTERFACE, Url::fromRoute($route));
+  if (empty($links->links)) {
+    return;
+  }
+  foreach ($links->links as $langcode => $link) {
+    if (!isset($link['query'])) {
+      $link['query'] = array();
+    }
+    $link['query'] += \Drupal::request()->query->all();
+    $link['url']->setOptions($link);
+    $link['url']->setAbsolute();
+    $page['#attached']['html_head_link'][] = [
+      [
+        'rel' => 'alternate',
+        'hreflang' => $langcode,
+        'href' => $link['url']->toString(),
+      ],
+      TRUE,
+    ];
+  }
+}

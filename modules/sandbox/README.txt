@@ -1,0 +1,1 @@
+This folder contain drupal sandbox modules. See more on https://www.drupal.org/project/project_module?f[0]=&f[1]=&f[2]=&f[3]=&f[4]=sm_field_project_type%3Asandbox&text=&solrsort=iss_project_release_usage+desc&op=Search

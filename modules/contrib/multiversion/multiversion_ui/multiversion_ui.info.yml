@@ -1,0 +1,13 @@
+name: Multiversion UI
+type: module
+description: 'User interface for the Multiversion module.'
+# version: VERSION
+# core: 8.x
+dependencies:
+  - multiversion
+
+# Information added by Drupal.org packaging script on 2015-10-25
+version: '8.x-1.x-dev'
+core: '8.x'
+project: 'multiversion'
+datestamp: 1445769540

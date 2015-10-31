@@ -1,0 +1,27 @@
+<?php
+
+use Drupal\Core\Site\Settings;
+
+/**
+ * Implement hook_install().
+ */
+function multiversion_install() {
+  drupal_flush_all_caches();
+  // Check if private directory is configured.
+  if (!Settings::get('file_private_path')) {
+    throw new Exception(t('Private directory is not configured.'));
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function multiversion_uninstall() {
+  \Drupal::state()->delete('multiversion_user_migration_to_json_done');
+  \Drupal::service('config.factory')
+    ->getEditable('migrate.migration.migrate_users_from_json_to_drupal8')
+    ->delete();
+  \Drupal::service('config.factory')
+    ->getEditable('migrate.migration.migrate_users_from_drupal8_to_json')
+    ->delete();
+}

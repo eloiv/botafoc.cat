@@ -1,0 +1,10 @@
+name: Coffee
+description: Provides an Alfred like search box to navigate within your site.
+core: 8.x
+type: module
+configure: coffee.configuration
+
+# Information added by drush on 2015-10-31
+version: '8.x-1.x-dev'
+project: 'coffee'
+datestamp: 1446304067

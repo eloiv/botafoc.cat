@@ -1,0 +1,35 @@
+/**
+ * @file
+ * Installation styling.
+ *
+ * Unfortunately we have to make our styling quite strong, to override the
+ * .maintenance-page styling.
+ */
+body.install-page {
+  background-color: #008080;
+  background-image: none;
+}
+
+header {
+  text-align: center;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+  border-bottom: solid 1px #008080;
+}
+
+h1.page-title {
+  width: 100%;
+  margin: 0px;
+}
+
+.install-page span.site-version {
+  font-size: 1.0em;
+}
+
+aside.layout-sidebar-first {
+  float: right;
+}
+
+ol.task-list .is-active::after {
+  border-width: 0px;
+}

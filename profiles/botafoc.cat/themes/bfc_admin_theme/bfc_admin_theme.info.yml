@@ -1,0 +1,8 @@
+name: Botafoc.cat Admin Theme
+type: theme
+description: 'Theme of Botafoc Admin subtheme of Seven'
+version: VERSION
+core: 8.x
+base theme: seven
+libraries:
+ - bfc_admin_theme/global-styling

@@ -1,0 +1,11 @@
+services:
+  multiversion_ui.route_subscriber:
+    class: Drupal\multiversion_ui\Routing\RouteSubscriber
+    arguments: ['@entity.manager']
+    tags:
+      - { name: event_subscriber }
+  paramconverter.entity_revision:
+    class: Drupal\multiversion_ui\ParamConverter\EntityRevisionConverter
+    arguments: ['@entity.manager']
+    tags:
+      - { name: paramconverter, priority: 30 }

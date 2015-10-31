@@ -1,0 +1,91 @@
+.item-list ul.multiversion,
+.item-list ul.multiversion ul {
+  padding-top: 20px;
+  position: relative;
+  margin: 0;
+}
+
+.item-list .multiversion li {
+  float: left;
+  text-align: center;
+  list-style-type: none;
+  position: relative;
+  padding: 20px 5px 0;
+  margin: 0;
+}
+
+/* We will use ::before and ::after to draw the connectors */
+.item-list .multiversion li::before,
+.item-list .multiversion li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 50%;
+  border-top: 1px solid #ccc;
+  width: 50%;
+  height: 20px;
+}
+.item-list .multiversion li::after {
+  right: auto;
+  left: 50%;
+  border-left: 1px solid #ccc;
+}
+
+/* We need to remove left-right connectors from elements without any siblings */
+.item-list .multiversion li:only-child::after,
+.item-list .multiversion li:only-child::before {
+  display: none;
+}
+
+/* Remove space from the top of single children */
+.item-list .multiversion li:only-child{
+  padding-top: 0;
+}
+
+/* Remove left connector from first child and right connector from last child*/
+.item-list .multiversion li:first-child::before,
+.item-list .multiversion li:last-child::after {
+  border: 0 none;
+}
+
+/* Adding back the vertical connector to the last nodes */
+.item-list .multiversion li:last-child::before {
+  border-right: 1px solid #ccc;
+}
+
+/* Downward connector from parents */
+.item-list ul.multiversion ul::before,
+.item-list ul.multiversion ul ul::before {
+  content: '';
+  position: absolute; top: 0; left: 50%;
+  border-left: 1px solid #ccc;
+  width: 0;
+  height: 20px;
+}
+
+.item-list .multiversion .rev,
+.item-list .multiversion .rev__title {
+  display: inline-block;
+  margin: 0;
+}
+
+.item-list .multiversion .panel__title {
+  padding: 0;
+}
+
+.item-list .multiversion hr {
+  margin: 5px 0;
+}
+
+.rev {
+  margin: 0px 0px 20px;
+  padding: 9px;
+  background: #F8F8F8;
+  border: 1px solid #CCC
+}
+
+.rev__title {
+  font-size: 1em;
+  text-transform: uppercase;
+  margin: 0px;
+}

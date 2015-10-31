@@ -1,0 +1,349 @@
+<?php
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\multiversion\Entity\WorkspaceInterface;
+use Drupal\views\Plugin\views\query\QueryPluginBase;
+use Drupal\views\ViewExecutable;
+
+/**
+ * Implements hook_hook_info();
+ */
+function multiversion_hook_info() {
+  $hooks['modules_installed'] = array(
+    'group' => 'migrate',
+  );
+  return $hooks;
+}
+
+/**
+ * Implements hook_entity_type_alter().
+ *
+ * @param \Drupal\Core\Entity\EntityTypeInterface[] $entity_types
+ */
+function multiversion_entity_type_alter(array &$entity_types) {
+  /** @var \Drupal\multiversion\MultiversionManagerInterface $manager */
+  $manager = \Drupal::service('multiversion.manager');
+
+  foreach ($entity_types as $entity_type) {
+    if ($manager->isSupportedEntityType($entity_type)) {
+      // Make all content entity types revisionable.
+      if (!$entity_type->isRevisionable()) {
+        // We only need to set the revision key to make an entity type
+        // revisionable. The table names will be handled by the storage class.
+        // @see \Drupal\Core\Entity\Sql\SqlContentEntityStorage::initTableLayout
+        $keys = $entity_type->getKeys();
+        $keys['revision'] = 'revision_id';
+        $entity_type->set('entity_keys', $keys);
+      }
+      $namespace = 'Drupal\multiversion\Entity\Storage\Sql';
+      switch ($entity_type->id()) {
+        case 'node':
+          $entity_type->setStorageClass($namespace . '\NodeStorage');
+          break;
+        case 'taxonomy_term':
+          $entity_type->setStorageClass($namespace . '\TermStorage');
+          break;
+        case 'comment':
+          $entity_type->setStorageClass($namespace . '\CommentStorage');
+          break;
+        case 'menu_link_content':
+          $entity_type->setStorageClass($namespace . '\MenuLinkContentStorage');
+          break;
+        case 'user':
+          $entity_type->setStorageClass($namespace . '\UserStorage');
+          break;
+        default:
+          $entity_type->setStorageClass($namespace . '\ContentEntityStorage');
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_base_field_info().
+ *
+ * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
+ * @return \Drupal\Core\Field\BaseFieldDefinition[]
+ */
+function multiversion_entity_base_field_info(EntityTypeInterface $entity_type) {
+  /** @var \Drupal\multiversion\MultiversionManagerInterface $manager */
+  $manager = \Drupal::service('multiversion.manager');
+
+  if ($manager->isSupportedEntityType($entity_type)) {
+    $fields = array();
+
+    // This will essentially overwrite the revision field definition but also
+    // ensure that entity types that we enabled revisions for get a revision
+    // field definition of a type that we expect.
+    $fields[$entity_type->getKey('revision')] = BaseFieldDefinition::create('integer')
+      ->setLabel(t('Revision ID'))
+      ->setDescription(t('The local revision ID of the entity.'))
+      ->setReadOnly(TRUE)
+      ->setSetting('unsigned', TRUE);
+
+    // @todo: {@link https://www.drupal.org/node/2362433 Make this not
+    // revisionable, currently it's not possible.}
+    $fields['workspace'] = BaseFieldDefinition::create('workspace_reference')
+      ->setLabel('Workspace reference')
+      ->setDescription('The workspace this entity belongs to.')
+      ->setSetting('target_type', 'workspace')
+      ->setRevisionable(TRUE)
+      ->setTranslatable(FALSE)
+      ->setCardinality(1)
+      ->setReadOnly(TRUE);
+
+    $fields['_deleted'] = BaseFieldDefinition::create('boolean')
+      ->setLabel('Deleted flag')
+      ->setDescription('Indicates if the entity is flagged as deleted or not.')
+      ->setRevisionable(TRUE)
+      ->setTranslatable(TRUE)
+      ->setDefaultValue(FALSE)
+      ->setCardinality(1);
+
+    $fields['_rev'] = BaseFieldDefinition::create('revision_token')
+      ->setLabel('Revision token')
+      ->setDescription('The token for this entity revision.')
+      ->setRevisionable(TRUE)
+      ->setTranslatable(TRUE)
+      ->setCardinality(1)
+      ->setReadOnly(TRUE);
+
+    return $fields;
+  }
+}
+
+/**
+ * Implements hook_entity_base_field_info_alter().
+ *
+ * @param array $fields
+ * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
+ */
+function multiversion_entity_base_field_info_alter(&$fields, EntityTypeInterface $entity_type) {
+  /** @var \Drupal\multiversion\MultiversionManagerInterface $manager */
+  $manager = \Drupal::service('multiversion.manager');
+  $need_update = array('taxonomy_term', 'comment', 'menu_link_content');
+  if ($manager->isSupportedEntityType($entity_type) && in_array($entity_type->id(), $need_update)) {
+    $exclude_fields = array();
+    $exclude = array('id', 'uuid', 'revision_id', 'language', 'bundle');
+    if ($entity_type->id() == 'taxonomy_term') {
+      $exclude_fields = array_merge($exclude, array('tid', 'vid'));
+    }
+    if ($entity_type->id() == 'comment') {
+      $exclude_fields = array_merge($exclude, array('cid','comment_type'));
+    }
+    if ($entity_type->id() == 'menu_link_content') {
+      $exclude_fields = array_merge($exclude, array());
+    }
+    foreach ($fields as $key => $field) {
+      if (!in_array($key, $exclude_fields)) {
+        $field->setRevisionable(TRUE);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_views_data_alter().
+ */
+function multiversion_views_data_alter(array &$data) {
+  foreach ($data as $key => $item) {
+    // Set standard handler for _rev field.
+    if (isset($data[$key]['_rev'])) {
+      $data[$key]['_rev']['field']['id'] = 'standard';
+    }
+    if (isset($data[$key]['_deleted'])) {
+      // Use status = 1 instead of status <> 0 in WHERE statement.
+      $data[$key]['_deleted']['filter']['use_equal'] = TRUE;
+    }
+    // Add a new filter that filters content by current active workspace.
+    if (isset($data[$key]['workspace'])) {
+      $data[$key]['current_workspace'] = array(
+        'title' => t('Current workspace'),
+        'help' => t('Filters content by current active workspace.'),
+        'filter' => array(
+          'field' => 'workspace',
+          'id' => 'current_workspace',
+          'label' => t('Current workspace'),
+        ),
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_views_post_execute().
+ */
+function multiversion_views_post_execute(ViewExecutable $view) {
+  // Add deleted entities if we have rows for them.
+  // When we want to get deleted entities using the _deleted field, entities
+  // should be loaded with
+  // \Drupal::entityManager()->getStorage($entity_type)->loadDeleted($id) or
+  // \Drupal::entityManager()->getStorage($entity_type)->loadMultipleDeleted($ids),
+  // otherwise the _entity field in the view result rows will be null.
+  $base_field = $view->storage->get('base_field');
+  $table_info = $view->query->getEntityTableInfo();
+  $content_type_info = array_column($table_info, 'entity_type');
+  if (is_array($view->result) && $content_type = $content_type_info[0]) {
+    $ids = array();
+    foreach ($view->result as $index => $row) {
+      if (empty($row->_entity) && !empty($row->{$base_field})) {
+        $ids[$index] = $row->{$base_field};
+      }
+    }
+    $entities = \Drupal::entityManager()->getStorage($content_type)->loadMultipleDeleted($ids);
+    foreach ($view->result as $index => $row) {
+      if (empty($row->_entity) && !empty($row->{$base_field}) && isset($entities[$row->{$base_field}])) {
+        $view->result[$index]->_entity = $entities[$row->{$base_field}];
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_views_query_alter().
+ *
+ * @param \Drupal\views\ViewExecutable $view
+ *   The view object about to be processed.
+ * @param QueryPluginBase $query
+ *   The query plugin object for the query.
+ */
+function multiversion_views_query_alter(ViewExecutable $view, QueryPluginBase $query) {
+  // Add a new filter for default core views, it will filter deleted content.
+  $views_ids = array(
+    'content',
+    'frontpage',
+    'comments_recent',
+    'content_recent',
+    'taxonomy_term',
+    'glossary',
+    'archive',
+    'user_admin_people',
+  );
+  if (in_array($view->id(), $views_ids)) {
+    $base_table = $view->storage->get('base_table');
+    $view->query->where[1]['conditions'][] = array(
+      'field' => $base_table . '._deleted',
+      'value' => FALSE,
+      'operator' => '='
+    );
+    // We shouldn't filter user content type when creating a new node because
+    // we need the author info for this.
+    if (strpos(\Drupal::url('<current>'), 'node/add/'
+      && $base_table == 'users_field_data') !== TRUE) {
+      $view->query->where[1]['conditions'][] = array(
+        'field' => $base_table . '.workspace',
+        'value' => multiversion_get_active_workspace_id(),
+        'operator' => '='
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function multiversion_entity_insert(EntityInterface $entity) {
+  $manager = \Drupal::service('multiversion.manager');
+  if ($entity->uuid() && $manager->isSupportedEntityType($entity->getEntityType())) {
+    \Drupal::service('entity.index.sequence')->add($entity);
+    \Drupal::service('entity.index.id')->add($entity);
+    \Drupal::service('entity.index.uuid')->add($entity);
+    \Drupal::service('entity.index.rev')->add($entity);
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function multiversion_entity_update(EntityInterface $entity) {
+  multiversion_entity_insert($entity);
+}
+
+/**
+ * Load a deleted entity.
+ *
+ * @param string $entity_type
+ * @param integer $id
+ * @param boolean $reset
+ *
+ * @return \Drupal\Core\Entity\EntityInterface|null
+ *   The entity object, or NULL if there is no entity with the given ID.
+ *
+ * @deprecated in Multiversion 8.x-1.x,
+ *   will be removed before Multiversion 8.x-2.x.
+ *   Use the entity manager service to load the entity
+ *   from the entity storage:
+ * @code
+ * \Drupal::entityManager()->getStorage($entity_type)->loadDeleted($id)
+ * @endcode
+ */
+function entity_load_deleted($entity_type, $id, $reset = FALSE) {
+  $controller = \Drupal::entityManager()->getStorage($entity_type);
+  if ($reset) {
+    $controller->resetCache(array($id));
+  }
+  return $controller->loadDeleted($id);
+}
+
+/**
+ * Load multiple deleted entities.
+ *
+ * @param string $entity_type
+ * @param array $ids
+ * @param boolean $reset
+ *
+ * @return array
+ *   An array of entity objects indexed by their IDs.
+ *
+ * @deprecated in Multiversion 8.x-1.x,
+ *   will be removed before Multiversion 8.x-2.x.
+ *   Use the entity manager service to load the entity
+ *   from the entity storage:
+ * @code
+ * \Drupal::entityManager()->getStorage($entity_type)->loadMultipleDeleted($id)
+ * @endcode
+ */
+function entity_load_multiple_deleted($entity_type, $ids, $reset = FALSE) {
+  $controller = \Drupal::entityManager()->getStorage($entity_type);
+  if ($reset) {
+    $controller->resetCache($ids);
+  }
+  return $controller->loadMultipleDeleted($ids);
+}
+
+/**
+ * Callback for getting the active workspace ID.
+ */
+function multiversion_get_active_workspace_id() {
+  return \Drupal::service('multiversion.manager')->getActiveWorkspaceId();
+}
+
+/**
+ * URI callback for the workspace entity type.
+ */
+function multiversion_workspace_uri(WorkspaceInterface $entity) {
+  return $entity->id();
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function multiversion_form_node_type_edit_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  // Users don't have the option to disable revisions when using Multiversion.
+  // @todo: {@link https://www.drupal.org/node/2597393 See if there's a way
+  // to just disable this particular option.}
+  unset($form['workflow']['options']['#options']['revision']);
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function multiversion_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  if (isset($form['revision']['#group']) && $form['revision']['#group'] == 'revision_information') {
+    // Users don't have the option to disable revisions when using Multiversion.
+    $form['revision']['#default_value'] = TRUE;
+    $form['revision']['#disabled'] = TRUE;
+  }
+}

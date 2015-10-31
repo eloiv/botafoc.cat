@@ -1,0 +1,4 @@
+administer multiversion revisions:
+  title: 'Administer revisions'
+  description: 'Manage revisions, conflicts and perform other tasks across all entity types.'
+  restrict access: true

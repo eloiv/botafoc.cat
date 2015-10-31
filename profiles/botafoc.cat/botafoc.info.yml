@@ -1,0 +1,57 @@
+distribution:
+  name: Botafoc.cat
+  install:
+    theme: bfc_admin_theme
+name: Botafoc.cat
+type: profile
+description: 'Botafoc base distribution'
+core: 8.x
+dependencies:
+  # core modules
+  - block
+  - block_content
+  - breakpoint
+  - ckeditor
+  - contextual
+  - menu_link_content
+  - menu_ui
+  - node
+  - path
+  - responsive_image
+  - syslog
+  - taxonomy
+  - toolbar
+  - update
+  - views
+  - views_ui
+  - tour
+  - language
+  - locale
+  - field_ui
+
+  # contrib modules
+  # Administration
+  - admin_toolbar
+  - admin_toolbar_tools
+  - coffee
+  - trash
+  - filter_perms
+
+  #fields
+  - field_group
+  - menu_link_attributes
+  - fff
+  - fences
+  - editor_file
+
+  #UX
+  - extlink
+
+  #SEO
+  - hreflang
+
+  #Tokens
+  - token
+themes:
+  - bartik
+  - seven

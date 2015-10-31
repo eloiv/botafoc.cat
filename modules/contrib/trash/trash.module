@@ -1,0 +1,13 @@
+<?php
+
+function trash_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  if (strpos($form_id, 'delete') && method_exists($form_state->getFormObject(), 'getEntity')) {
+    $entity = $form_state->getFormObject()->getEntity();
+    $entity_type = $entity->getEntityType();
+    if (\Drupal::service('multiversion.manager')->isSupportedEntityType($entity_type)) {
+      $form['description'] = array(
+            '#markup' => t('The @entity %label will be moved to the trash.', ['@entity' => $entity_type->get('label'), '%label' => $entity->label()]),
+          );
+    }
+  }
+}

@@ -1,0 +1,5 @@
+drupal.multiversion_ui.admin:
+  version: VERSION
+  css:
+    theme:
+      css/multiversion_ui.admin.css: {}

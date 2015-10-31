@@ -1,0 +1,8 @@
+trash.default:
+  title: Trash
+  route_name: trash.default
+  base_route: system.admin_content
+  weight: 100
+trash.local_tasks:
+  deriver: 'Drupal\trash\Plugin\Derivative\TrashLocalTasks'
+  weight: 100

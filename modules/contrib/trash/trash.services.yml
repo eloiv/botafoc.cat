@@ -1,0 +1,6 @@
+services:
+  trash.route_subscriber:
+    class: Drupal\trash\Routing\RouteSubscriber
+    arguments: ['@multiversion.manager']
+    tags:
+      - { name: event_subscriber, priority: -100 }
