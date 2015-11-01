@@ -87,7 +87,7 @@ class SelectLanguagesForm extends FormBase {
       '#title_display' => 'before',
       '#options' => $select_options,
       '#multiple' => TRUE,
-      '#description' => 'Select another languages if your sites is multilingual',
+      '#description' => 'Select another languages if your site is multilingual',
     );
 
     $form['actions'] = array('#type' => 'actions');

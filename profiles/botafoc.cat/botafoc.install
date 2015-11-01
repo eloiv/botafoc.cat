@@ -4,6 +4,9 @@
  * Install, update and uninstall functions for the standard installation profile.
  */
 
+use Drupal\user\Entity\User;
+use Drupal\user\RoleInterface;
+
 /**
  * Implements hook_install().
  *
@@ -12,4 +15,17 @@
  * @see system_install()
  */
 function botafoc_install() {
+  // Set front page to "node".
+  \Drupal::configFactory()->getEditable('system.site')->set('page.front', '/node')->save(TRUE);
+
+  // Enable default permissions for system roles.
+  user_role_grant_permissions(RoleInterface::ANONYMOUS_ID, array('access comments'));
+
+  // Assign user 1 the "administrator" role.
+  $user = User::load(1);
+  $user->roles[] = 'administrator';
+  $user->save();
+
+  // Enable the admin theme to edit
+  \Drupal::configFactory()->getEditable('node.settings')->set('use_admin_theme', TRUE)->save(TRUE);
 }
