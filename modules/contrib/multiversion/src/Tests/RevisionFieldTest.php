@@ -33,7 +33,8 @@ class RevisionFieldTest extends FieldTestBase {
 
   public function testFieldOperations() {
     foreach ($this->entityTypes as $entity_type_id => $info) {
-      $entity = entity_create($entity_type_id, $info);
+      $storage = $this->entityManager->getStorage($entity_type_id);
+      $entity = $storage->create($info);
 
       // Test normal save operations.
 
@@ -45,7 +46,6 @@ class RevisionFieldTest extends FieldTestBase {
 
       $entity->save();
       $first_rev = $entity->_rev->value;
-      list($i, $first_hash) = explode('-', $first_rev);
       $this->assertTrue((strpos($first_rev, '1') === 0), 'Revision index was 1 after first save.');
 
       // Simulate the input from a replication.
@@ -56,12 +56,12 @@ class RevisionFieldTest extends FieldTestBase {
       if ($entity_type_id == 'user') {
         $info['name'] = $this->randomMachineName();
       }
-      $entity = entity_create($entity_type_id, $info);
+      $entity = $storage->create($info);
       $sample_rev = RevisionItem::generateSampleValue($entity->_rev->getFieldDefinition());
 
       $entity->_rev->value = $sample_rev['value'];
       $entity->_rev->new_edit = FALSE;
-      $entity->_rev->revisions = array($sample_rev['value']);
+      $entity->_rev->revisions = [$sample_rev['value']];
       $entity->save();
       // Assert that the revision token did not change.
       $this->assertEqual($entity->_rev->value, $sample_rev['value']);

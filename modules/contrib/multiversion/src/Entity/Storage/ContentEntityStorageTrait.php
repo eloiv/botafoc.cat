@@ -216,7 +216,7 @@ trait ContentEntityStorageTrait {
    * {@inheritdoc}
    */
   public function deleteRevision($revision_id) {
-    throw new ConflictException(NULL, 'Revisions can not be deleted when using a Multiversion storage handler.');
+    // Do nothing by design.
   }
 
   /**

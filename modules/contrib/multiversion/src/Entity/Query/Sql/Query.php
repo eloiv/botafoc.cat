@@ -13,11 +13,17 @@ class Query extends CoreQuery implements QueryInterface {
   use QueryTrait;
 
   /**
+   * @var \Drupal\multiversion\MultiversionManager
+   */
+  protected $multiversionManager;
+
+  /**
    * {@inheritdoc}
    */
   public function __construct(EntityTypeInterface $entity_type, $conjunction, Connection $connection, array $namespaces) {
     parent::__construct($entity_type, $conjunction, $connection, $namespaces);
     $this->entityManager = \Drupal::service('entity.manager');
+    $this->multiversionManager = \Drupal::service('multiversion.manager');
   }
 
 }

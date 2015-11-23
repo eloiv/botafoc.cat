@@ -1,0 +1,18 @@
+patterns:
+  node:
+    default: '[node:title]'
+    bundles:
+      article:
+        default: ''
+      page:
+        default: ''
+  taxonomy_term:
+    default: '/[term:vocabulary]/[term:name]'
+    bundles:
+      tags:
+        default: ''
+  forum:
+    default: '/[term:vocabulary]/[term:name]'
+  user:
+    default: '/users/[user:name]'
+langcode: en

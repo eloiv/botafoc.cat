@@ -17,6 +17,7 @@ use Drupal\language\Entity\ConfigurableLanguage;
  * installed so therefore its code cannot be autoloaded.
  */
 include_once __DIR__ . '/src/Form/SelectLanguagesForm.php';
+include_once __DIR__ . '/src/Form/SelectConfigurationForm.php';
 
 function botafoc_install_tasks_alter(&$tasks, $install_state) {
   $all_tasks = $tasks;
@@ -26,6 +27,10 @@ function botafoc_install_tasks_alter(&$tasks, $install_state) {
   $tasks['install_select_languages'] = array(
     'display_name' => t('Select languages'),
     'run' => INSTALL_TASK_RUN_IF_REACHED,
+  );
+
+  $tasks['install_select_configuration'] = array(
+    'display_name' => t('Select configuration'),
   );
 
   // Added task after task key
@@ -92,12 +97,20 @@ function install_select_languages(&$install_state) {
   }
 }
 
+function install_select_configuration(&$install_state) {
+  if (empty($install_state['parameters']['configuration'])) {
+    return install_get_form('Drupal\botafoc\Form\SelectConfigurationForm', $install_state);
+  }
+}
+
 function install_initial_configuration(&$install_state) {
-  if ($_GET['langcodes']) {
+  if (!empty($_GET['langcodes'])) {
     $langcodes = $_GET['langcodes'];
 
     foreach($langcodes as $key => $value) {
-      ConfigurableLanguage::createFromLangcode($key)->save();
+      if ($key != $_GET['langcode']) {
+        ConfigurableLanguage::createFromLangcode($key)->save();
+      }
     }
   }
 }

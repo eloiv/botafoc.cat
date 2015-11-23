@@ -43,12 +43,10 @@ class WorkspaceManager implements WorkspaceManagerInterface {
   /**
    * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   * @param \Drupal\Core\Cache\CacheBackendInterface $cache_render
    */
-  public function __construct(RequestStack $request_stack, EntityManagerInterface $entity_manager, CacheBackendInterface $cache_render) {
+  public function __construct(RequestStack $request_stack, EntityManagerInterface $entity_manager) {
     $this->requestStack = $request_stack;
     $this->entityManager = $entity_manager;
-    $this->cacheRender = $cache_render;
   }
 
   /**
@@ -79,7 +77,6 @@ class WorkspaceManager implements WorkspaceManagerInterface {
    * @todo {@link https://www.drupal.org/node/2600382 Access check.}
    */
   public function getActiveWorkspace() {
-    $this->cacheRender->deleteAll();
     if (!isset($this->activeWorkspace)) {
       $request = $this->requestStack->getCurrentRequest();
       foreach ($this->getSortedNegotiators() as $negotiator) {

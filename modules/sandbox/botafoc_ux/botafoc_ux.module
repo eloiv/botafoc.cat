@@ -1,0 +1,32 @@
+<?php
+
+// Move checkbox of permission on left.
+function botafoc_ux_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  if($form_id == 'user_admin_permissions') {
+    $description = array_shift($form['permissions']['#header']);
+    array_push($form['permissions']['#header'], $description);
+    foreach ($form['permissions'] as $key => $value) {
+      if (substr($key, 0, 1) != '#') {
+        $first_key = key($value);
+        if (!is_integer($first_key) && $first_key == 'description') {
+          $description = array_shift($form['permissions'][$key]);
+          array_push($form['permissions'][$key], $description);
+        }
+        else {
+          $empty_td = array(
+            '#wrapper_attributes' => array(
+              'colspan' => 1,
+              'class' => array('module'),
+              'id' => 'module-' . $provider,
+            ),
+            '#markup' => '',
+          );
+
+          for($i = 1; $i <= count(user_roles()); $i++) {
+            array_unshift($form['permissions'][$key], $empty_td);
+          }
+        }
+      }
+    }
+  }
+}

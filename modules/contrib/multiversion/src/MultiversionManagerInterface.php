@@ -28,9 +28,20 @@ interface MultiversionManagerInterface {
   public function isSupportedEntityType(EntityTypeInterface $entity_type);
 
   /**
-   * @return array
+   * @return \Drupal\Core\Entity\EntityTypeInterface[]
    */
   public function getSupportedEntityTypes();
+
+  /**
+   * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
+   * @return boolean
+   */
+  public function isEnabledEntityType(EntityTypeInterface $entity_type);
+
+  /**
+   * @return \Drupal\multiversion\MultiversionManagerInterface
+   */
+  public function enableEntityTypes();
 
   /**
    * @return integer

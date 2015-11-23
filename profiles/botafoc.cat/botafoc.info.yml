@@ -7,11 +7,13 @@ type: profile
 description: 'Botafoc base distribution'
 core: 8.x
 dependencies:
-  # core modules
+  # Core modules
+  - automated_cron
   - block
   - block_content
   - breakpoint
   - ckeditor
+  - config
   - contextual
   - menu_link_content
   - menu_ui
@@ -19,6 +21,8 @@ dependencies:
   - path
   - responsive_image
   - syslog
+  - dblog
+  - shortcut
   - taxonomy
   - toolbar
   - update
@@ -27,31 +31,44 @@ dependencies:
   - tour
   - language
   - locale
+  - image
+  - datetime
+  - options
   - field_ui
+  - help
+  - rdf
 
-  # contrib modules
+  # Contrib modules
   # Administration
   - admin_toolbar
   - admin_toolbar_tools
   - coffee
   - trash
-  - filter_perms
 
-  #fields
+  # Fields
   - field_group
   - menu_link_attributes
   - fff
   - fences
   - editor_file
 
-  #UX
+  # UX
   - extlink
+  - logouttab
 
-  #SEO
+  # Path
+  - pathauto
+
+  # SEO
   - hreflang
 
-  #Tokens
+  # Tokens
   - token
+
+  # Botafoc.cat
+  - botafoc_ux
+
 themes:
   - bartik
   - seven
+  - bfc_admin_theme

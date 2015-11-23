@@ -1,0 +1,5 @@
+name: Botafoc UX
+type: module
+description: UX to drupal interface
+package: Botafoc.cat
+core: 8.x

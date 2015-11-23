@@ -1,0 +1,17 @@
+name : 'Pathauto'
+description : 'Provides a mechanism for modules to automatically generate aliases for the content they manage.'
+core: 8.x
+type: module
+
+dependencies:
+- path
+- token
+
+configure: pathauto.patterns.form
+
+recommends:
+- redirect
+# Information added by drush on 2015-11-23
+version: '8.x-1.x-dev'
+project: 'pathauto'
+datestamp: 1448282612

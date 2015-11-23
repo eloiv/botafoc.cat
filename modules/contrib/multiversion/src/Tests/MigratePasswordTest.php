@@ -7,23 +7,34 @@
 
 namespace Drupal\multiversion\Tests;
 
+use Drupal\KernelTests\KernelTestBase;
+
 /**
  * Test password hashing on migration.
  *
  * @group multiversion
  */
-class MigratePasswordTest extends MultiversionWebTestBase {
+class MigratePasswordTest extends KernelTestBase {
+
+  protected $strictConfigSchema = FALSE;
+
+  public static $modules = [
+    'multiversion',
+    'key_value',
+    'serialization',
+    'user',
+  ];
 
   public function testPasswordMigration() {
     $password_migrate = \Drupal::service('password_migrate');
     $password = $this->randomMachineName();
     $migrated_password = $password_migrate->hash($password);
-    $this->assertNotEqual($migrated_password, $password, 'Migrated password was hashed.');
+    $this->assertNotEquals($password, $migrated_password, 'Migrated password was hashed.');
 
     $password_migrate->disablePasswordHashing();
     $password = $this->randomMachineName();
     $migrated_password = $password_migrate->hash($password);
-    $this->assertEqual($migrated_password, $password, 'Migrated password was not hashed.');
+    $this->assertEquals($password, $migrated_password, 'Migrated password was not hashed.');
   }
 
 }

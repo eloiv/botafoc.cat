@@ -13,28 +13,33 @@ use Drupal\node\NodeStorage as CoreNodeStorage;
 
 /**
  * Defines the controller class for nodes.
- *
- * @todo: {@link https://www.drupal.org/node/2597534 Remove this, as it's not
- * needed anymore.}
  */
 class NodeStorage extends CoreNodeStorage implements ContentEntityStorageInterface {
 
   use ContentEntityStorageTrait {
-    // @todo Rename to doDelete for consistency with other storage handlers.
     delete as deleteEntities;
   }
 
   /**
    * {@inheritdoc}
+   *
+   * @todo: {@link https://www.drupal.org/node/2597534 Figure out why we need
+   * this}, core seems to solve it some other way.
    */
   public function delete(array $entities) {
     // Delete all comments before deleting the nodes.
-    $comment_storage = \Drupal::entityManager()->getStorage('comment');
-    foreach ($entities as $entity) {
-      if ($entity->comment) {
-        $comments = $comment_storage->loadThread($entity, 'comment', 1);
-        $comment_storage->delete($comments);
+    try {
+      $comment_storage = \Drupal::entityManager()->getStorage('comment');
+      foreach ($entities as $entity) {
+        if ($entity->comment) {
+          $comments = $comment_storage->loadThread($entity, 'comment', 1);
+          $comment_storage->delete($comments);
+        }
       }
+    }
+    catch (\Exception $e) {
+      // Failing likely due to comment module not being enabled. But we also
+      // don't want node delete to fail because of broken comments.
     }
     $this->deleteEntities($entities);
   }

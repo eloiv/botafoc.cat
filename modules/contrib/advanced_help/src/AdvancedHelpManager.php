@@ -228,6 +228,13 @@ class AdvancedHelpManager extends DefaultPluginManager {
     return FALSE;
   }
 
+  public function getTopicFileName($module, $topic) {
+    $info = $this->getTopicFileInfo($module, $topic);
+    if ($info) {
+      return "./{$info['path']}/{$info['file']}";
+    }
+  }
+
   /**
    * Return true if the markdown filter is present.
    * @return bool

@@ -1,0 +1,43 @@
+punctuation:
+  punctuationdouble_quotes: 0
+  punctuationquotes: 0
+  punctuationbacktick: 0
+  punctuationcomma: 0
+  punctuationperiod: 0
+  punctuationhyphen: 1
+  punctuationunderscore: 0
+  punctuationcolon: 0
+  punctuationsemicolon: 0
+  punctuationpipe: 0
+  punctuationleft_curly: 0
+  punctuationleft_square: 0
+  punctuationright_curly: 0
+  punctuationright_square: 0
+  punctuationplus: 0
+  punctuationequal: 0
+  punctuationasterisk: 0
+  punctuationampersand: 0
+  punctuationpercent: 0
+  punctuationcaret: 0
+  punctuationdollar: 0
+  punctuationhash: 0
+  punctuationat: 0
+  punctuationexclamation: 0
+  punctuationtilde: 0
+  punctuationleft_parenthesis: 0
+  punctuationright_parenthesis: 0
+  punctuationquestion_mark: 0
+  punctuationless_than: 0
+  punctuationgreater_than: 0
+  punctuationslash: 0
+  punctuationback_slash: 0
+verbose: false
+separator: '-'
+max_length: 100
+max_component_length: 100
+transliterate: true
+reduce_ascii: true
+ignore_words: ''
+case: true
+update_action: 2
+langcode: en

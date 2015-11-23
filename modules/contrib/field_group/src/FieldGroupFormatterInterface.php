@@ -21,8 +21,10 @@ interface FieldGroupFormatterInterface extends PluginInspectionInterface {
    *
    * @param array $element
    *   The field group render array.
+   * @param object $rendering_object
+   *   The object / entity beïng rendered.
    */
-  public function preRender(&$element);
+  public function preRender(&$element, $rendering_object);
 
   /**
    * Returns a form to configure settings for the formatter.
@@ -50,9 +52,12 @@ interface FieldGroupFormatterInterface extends PluginInspectionInterface {
   /**
    * Defines the default settings for this plugin.
    *
+   * @param string $context
+   *   The context to get the default settings for.
+   *
    * @return array
    *   A list of default settings, keyed by the setting name.
    */
-  public static function defaultSettings();
+  public static function defaultContextSettings($context);
 
 }

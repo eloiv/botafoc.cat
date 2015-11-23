@@ -1,0 +1,16 @@
+status: true
+dependencies:
+  theme:
+    - bfc_admin_theme
+id: bfc_admin_theme_page_title
+theme: bfc_admin_theme
+region: header
+weight: -30
+provider: null
+plugin: page_title_block
+settings:
+  id: page_title_block
+  label: 'Page title'
+  provider: core
+  label_display: '0'
+visibility: {  }

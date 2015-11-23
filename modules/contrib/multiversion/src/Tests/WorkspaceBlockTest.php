@@ -7,12 +7,19 @@
 
 namespace Drupal\multiversion\Tests;
 
+use Drupal\Core\Url;
+use Drupal\multiversion\Entity\Workspace;
+use Drupal\node\Entity\Node;
+use Drupal\simpletest\WebTestBase;
+
 /**
  * Tests workspace block functionality.
  *
  * @group multiversion
  */
-class WorkspaceBlockTest extends MultiversionWebTestBase {
+class WorkspaceBlockTest extends WebTestBase {
+
+  protected $strictConfigSchema = FALSE;
 
   /**
    * The profile to install as a basis for testing.
@@ -22,34 +29,41 @@ class WorkspaceBlockTest extends MultiversionWebTestBase {
   protected $profile = 'standard';
 
   /**
+   * Modules to enable.
+   *
+   * @var array
+   */
+  public static $modules = ['multiversion'];
+
+  /**
    * A web user.
    */
   protected $webUser;
 
   protected function setUp() {
     parent::setUp();
-    $this->webUser = $this->drupalCreateUser(array(
+    $this->webUser = $this->drupalCreateUser([
       'administer blocks',
       'create article content',
       'access administration pages',
       'access content',
-    ));
+    ]);
     $this->drupalLogin($this->webUser);
     $this->drupalPlaceBlock('local_tasks_block');
   }
 
   public function testBlock() {
-    $this->drupalPlaceBlock('multiversion_workspace_block', array('region' => 'sidebar_first', 'label' => 'Workspace switcher'));
+    $this->drupalPlaceBlock('multiversion_workspace_block', ['region' => 'sidebar_first', 'label' => 'Workspace switcher']);
     $this->drupalGet('');
 
     // Confirm that the block is being displayed.
     $this->assertText('Workspace switcher', t('Block successfully being displayed on the page.'));
-    $front = \Drupal::url('<front>');
+    $front = Url::fromRoute('<front>')->toString(TRUE)->getGeneratedUrl();
     $this->assertRaw('href="'. $front .'"', 'The id of the default workspace was displayed in the Workspace switcher block as a link.');
     $id = $this->randomMachineName();
-    $entity = entity_create('workspace', array('id' => $id));
+    $entity = Workspace::create(['id' => $id]);
     $entity->save();
-    $node = entity_create('node', array('type' => 'article', 'title' => 'Test article'));
+    $node = Node::create(['type' => 'article', 'title' => 'Test article']);
     $node->save();
     $nid = $node->id();
     drupal_flush_all_caches();
@@ -60,14 +74,14 @@ class WorkspaceBlockTest extends MultiversionWebTestBase {
     $this->drupalGet('<front>');
     $url = $front . "?workspace=$id";
     $this->assertRaw('href="'. $url .'"', 'The id of the new workspace was displayed in the Workspace switcher block as a link.');
-    $this->drupalGet("/node/$nid", array('query' => array('workspace' => $id)));
+    $this->drupalGet("/node/$nid", ['query' => ['workspace' => $id]]);
     $this->assertText('Page not found');
-    $this->drupalGet('<front>', array('query' => array('workspace' => 'default')));
+    $this->drupalGet('<front>', ['query' =>['workspace' => 'default']]);
     $this->assertText('Test article', 'The title of the test article was displayed on the front page.');
-    $this->drupalGet('<front>', array('query' => array('workspace' => $id)));
+    $this->drupalGet('<front>', ['query' => ['workspace' => $id]]);
     $this->drupalGet('/node/add/article');
     $this->assertText('Create Article');
-    $this->drupalGet('<front>', array('query' => array('workspace' => $id)));
+    $this->drupalGet('<front>', ['query' => ['workspace' => $id]]);
     $this->assertNoText('Test article', 'The title of the test article was not displayed on the front page after switching the workspace.');
     $entity->delete();
     drupal_flush_all_caches();

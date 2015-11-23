@@ -3,19 +3,10 @@
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Url;
 use Drupal\multiversion\Entity\WorkspaceInterface;
 use Drupal\views\Plugin\views\query\QueryPluginBase;
 use Drupal\views\ViewExecutable;
-
-/**
- * Implements hook_hook_info();
- */
-function multiversion_hook_info() {
-  $hooks['modules_installed'] = array(
-    'group' => 'migrate',
-  );
-  return $hooks;
-}
 
 /**
  * Implements hook_entity_type_alter().
@@ -27,7 +18,7 @@ function multiversion_entity_type_alter(array &$entity_types) {
   $manager = \Drupal::service('multiversion.manager');
 
   foreach ($entity_types as $entity_type) {
-    if ($manager->isSupportedEntityType($entity_type)) {
+    if ($manager->isEnabledEntityType($entity_type)) {
       // Make all content entity types revisionable.
       if (!$entity_type->isRevisionable()) {
         // We only need to set the revision key to make an entity type
@@ -71,13 +62,22 @@ function multiversion_entity_base_field_info(EntityTypeInterface $entity_type) {
   /** @var \Drupal\multiversion\MultiversionManagerInterface $manager */
   $manager = \Drupal::service('multiversion.manager');
 
-  if ($manager->isSupportedEntityType($entity_type)) {
+  if ($manager->isEnabledEntityType($entity_type)) {
     $fields = array();
+
+    // @todo: Alter the entity label field to make it revisionable.
+
+    // In some scenarios where's in a state of limbo where we've already
+    // altered and enabled the entity type but we're given an old entity type
+    // definition for this hook and we get an empty revision key. However,
+    // these are always the entity types that Multiversion has enabled revisions
+    // on, so we can assume the same name of the revision key.
+    $revision_key = $entity_type->getKey('revision') ?: 'revision_id';
 
     // This will essentially overwrite the revision field definition but also
     // ensure that entity types that we enabled revisions for get a revision
     // field definition of a type that we expect.
-    $fields[$entity_type->getKey('revision')] = BaseFieldDefinition::create('integer')
+    $fields[$revision_key] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Revision ID'))
       ->setDescription(t('The local revision ID of the entity.'))
       ->setReadOnly(TRUE)
@@ -124,7 +124,7 @@ function multiversion_entity_base_field_info_alter(&$fields, EntityTypeInterface
   /** @var \Drupal\multiversion\MultiversionManagerInterface $manager */
   $manager = \Drupal::service('multiversion.manager');
   $need_update = array('taxonomy_term', 'comment', 'menu_link_content');
-  if ($manager->isSupportedEntityType($entity_type) && in_array($entity_type->id(), $need_update)) {
+  if ($manager->isEnabledEntityType($entity_type) && in_array($entity_type->id(), $need_update)) {
     $exclude_fields = array();
     $exclude = array('id', 'uuid', 'revision_id', 'language', 'bundle');
     if ($entity_type->id() == 'taxonomy_term') {
@@ -168,6 +168,11 @@ function multiversion_views_data_alter(array &$data) {
           'label' => t('Current workspace'),
         ),
       );
+      // Unset the 'Workspace reference' filter because users are not allowed to
+      // filter by a specific workspace, other than current active workspace.
+      // To filter by current active workspace will be used the 'Current workspace'
+      // filter.
+      unset($data[$key]['workspace']);
     }
   }
 }
@@ -179,23 +184,27 @@ function multiversion_views_post_execute(ViewExecutable $view) {
   // Add deleted entities if we have rows for them.
   // When we want to get deleted entities using the _deleted field, entities
   // should be loaded with
-  // \Drupal::entityManager()->getStorage($entity_type)->loadDeleted($id) or
-  // \Drupal::entityManager()->getStorage($entity_type)->loadMultipleDeleted($ids),
+  // \Drupal::entityManager()->getTypeStorage($entity_type)->loadDeleted($id) or
+  // \Drupal::entityManager()->getTypeStorage($entity_type)->loadMultipleDeleted($ids),
   // otherwise the _entity field in the view result rows will be null.
   $base_field = $view->storage->get('base_field');
   $table_info = $view->query->getEntityTableInfo();
   $content_type_info = array_column($table_info, 'entity_type');
   if (is_array($view->result) && $content_type = $content_type_info[0]) {
-    $ids = array();
-    foreach ($view->result as $index => $row) {
-      if (empty($row->_entity) && !empty($row->{$base_field})) {
-        $ids[$index] = $row->{$base_field};
+    $manager = \Drupal::service('multiversion.manager');
+    $storage = \Drupal::entityTypeManager()->getStorage($content_type);
+    if ($manager->isEnabledEntityType($storage->getEntityType())) {
+      $ids = array();
+      foreach ($view->result as $index => $row) {
+        if (empty($row->_entity) && !empty($row->{$base_field})) {
+          $ids[$index] = $row->{$base_field};
+        }
       }
-    }
-    $entities = \Drupal::entityManager()->getStorage($content_type)->loadMultipleDeleted($ids);
-    foreach ($view->result as $index => $row) {
-      if (empty($row->_entity) && !empty($row->{$base_field}) && isset($entities[$row->{$base_field}])) {
-        $view->result[$index]->_entity = $entities[$row->{$base_field}];
+      $entities = $storage->loadMultipleDeleted($ids);
+      foreach ($view->result as $index => $row) {
+        if (empty($row->_entity) && !empty($row->{$base_field}) && isset($entities[$row->{$base_field}])) {
+          $view->result[$index]->_entity = $entities[$row->{$base_field}];
+        }
       }
     }
   }
@@ -230,8 +239,13 @@ function multiversion_views_query_alter(ViewExecutable $view, QueryPluginBase $q
     );
     // We shouldn't filter user content type when creating a new node because
     // we need the author info for this.
-    if (strpos(\Drupal::url('<current>'), 'node/add/'
-      && $base_table == 'users_field_data') !== TRUE) {
+    $current_url = Url::fromRoute('<current>')
+      ->toString(TRUE)
+      ->getGeneratedUrl();
+    if (
+      !strpos($current_url, 'node/add/') &&
+      $base_table != 'users_field_data'
+    ) {
       $view->query->where[1]['conditions'][] = array(
         'field' => $base_table . '.workspace',
         'value' => multiversion_get_active_workspace_id(),
@@ -242,11 +256,36 @@ function multiversion_views_query_alter(ViewExecutable $view, QueryPluginBase $q
 }
 
 /**
+ * Implements hook_element_info_alter().
+ */
+function multiversion_element_info_alter(array &$types) {
+  foreach ($types as &$type) {
+    if (!isset($type['#pre_render'])) {
+      $type['#pre_render'] = array();
+    }
+    $type['#pre_render'][] = 'multiversion_element_pre_render';
+  }
+}
+
+/**
+ * Element pre-render callback.
+ */
+function multiversion_element_pre_render($element) {
+  if (isset($element['#cache'])) {
+    if (!isset($element['#cache']['contexts'])) {
+      $element['#cache']['contexts'] = array();
+    }
+    $element['#cache']['contexts'][] = 'workspace';
+  }
+  return $element;
+}
+
+/**
  * Implements hook_entity_insert().
  */
 function multiversion_entity_insert(EntityInterface $entity) {
   $manager = \Drupal::service('multiversion.manager');
-  if ($entity->uuid() && $manager->isSupportedEntityType($entity->getEntityType())) {
+  if ($manager->isEnabledEntityType($entity->getEntityType()) && $entity->uuid()) {
     \Drupal::service('entity.index.sequence')->add($entity);
     \Drupal::service('entity.index.id')->add($entity);
     \Drupal::service('entity.index.uuid')->add($entity);
@@ -259,58 +298,6 @@ function multiversion_entity_insert(EntityInterface $entity) {
  */
 function multiversion_entity_update(EntityInterface $entity) {
   multiversion_entity_insert($entity);
-}
-
-/**
- * Load a deleted entity.
- *
- * @param string $entity_type
- * @param integer $id
- * @param boolean $reset
- *
- * @return \Drupal\Core\Entity\EntityInterface|null
- *   The entity object, or NULL if there is no entity with the given ID.
- *
- * @deprecated in Multiversion 8.x-1.x,
- *   will be removed before Multiversion 8.x-2.x.
- *   Use the entity manager service to load the entity
- *   from the entity storage:
- * @code
- * \Drupal::entityManager()->getStorage($entity_type)->loadDeleted($id)
- * @endcode
- */
-function entity_load_deleted($entity_type, $id, $reset = FALSE) {
-  $controller = \Drupal::entityManager()->getStorage($entity_type);
-  if ($reset) {
-    $controller->resetCache(array($id));
-  }
-  return $controller->loadDeleted($id);
-}
-
-/**
- * Load multiple deleted entities.
- *
- * @param string $entity_type
- * @param array $ids
- * @param boolean $reset
- *
- * @return array
- *   An array of entity objects indexed by their IDs.
- *
- * @deprecated in Multiversion 8.x-1.x,
- *   will be removed before Multiversion 8.x-2.x.
- *   Use the entity manager service to load the entity
- *   from the entity storage:
- * @code
- * \Drupal::entityManager()->getStorage($entity_type)->loadMultipleDeleted($id)
- * @endcode
- */
-function entity_load_multiple_deleted($entity_type, $ids, $reset = FALSE) {
-  $controller = \Drupal::entityManager()->getStorage($entity_type);
-  if ($reset) {
-    $controller->resetCache($ids);
-  }
-  return $controller->loadMultipleDeleted($ids);
 }
 
 /**

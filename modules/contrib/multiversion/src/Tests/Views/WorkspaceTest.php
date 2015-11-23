@@ -7,6 +7,8 @@
 
 namespace Drupal\multiversion\Tests\Views;
 
+use Drupal\multiversion\Entity\Workspace;
+
 /**
  * Tests the workspace and current_workspace field handlers.
  *
@@ -22,28 +24,28 @@ class WorkspaceTest extends MultiversionTestBase {
    *
    * @var array
    */
-  public static $testViews = array('test_current_workspace');
+  public static $testViews = ['test_current_workspace'];
 
   /**
    * Tests the workspace filter.
    */
   public function testWorkspace() {
-    $admin_user = $this->drupalCreateUser(array('bypass node access'));
+    $admin_user = $this->drupalCreateUser(['bypass node access']);
     $uid = $admin_user->id();
     $this->drupalLogin($admin_user);
 
     // Create two nodes on 'default' workspace.
-    $node1 = $this->drupalCreateNode(array('uid' => $uid));
-    $node2 = $this->drupalCreateNode(array('uid' => $uid));
+    $node1 = $this->drupalCreateNode(['uid' => $uid]);
+    $node2 = $this->drupalCreateNode(['uid' => $uid]);
 
     // Create a new workspace and switch to it.
-    $new_workspace = entity_create('workspace', array('id' => 'new_workspace'));
+    $new_workspace = Workspace::create(['id' => 'new_workspace']);
     $new_workspace->save();
     \Drupal::service('workspace.manager')->setActiveWorkspace($new_workspace);
 
     // Create two nodes on 'new_workspace' workspace.
-    $node3 = $this->drupalCreateNode(array('uid' => $uid));
-    $node4 = $this->drupalCreateNode(array('uid' => $uid));
+    $node3 = $this->drupalCreateNode(['uid' => $uid]);
+    $node4 = $this->drupalCreateNode(['uid' => $uid]);
 
     // Test current_workspace filter.
     $this->drupalGet('test_current_workspace', ['query' => ['workspace' => 'new_workspace']]);

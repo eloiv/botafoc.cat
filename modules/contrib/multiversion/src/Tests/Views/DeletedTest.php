@@ -21,22 +21,22 @@ class DeletedTest extends MultiversionTestBase {
    *
    * @var array
    */
-  public static $testViews = array('test_deleted', 'test_not_deleted');
+  public static $testViews = ['test_deleted', 'test_not_deleted'];
 
   /**
    * Tests the _deleted filter when _deleted == 1.
    */
   public function testDeleted() {
-    $admin_user = $this->drupalCreateUser(array('bypass node access'));
+    $admin_user = $this->drupalCreateUser(['bypass node access']);
     $uid = $admin_user->id();
     $this->drupalLogin($admin_user);
 
     // Create four nodes and delete two of them.
-    $node1 = $this->drupalCreateNode(array('uid' => $uid));
-    $node2 = $this->drupalCreateNode(array('uid' => $uid));
-    $node3 = $this->drupalCreateNode(array('uid' => $uid));
+    $node1 = $this->drupalCreateNode(['uid' => $uid]);
+    $node2 = $this->drupalCreateNode(['uid' => $uid]);
+    $node3 = $this->drupalCreateNode(['uid' => $uid]);
     $node3->delete();
-    $node4 = $this->drupalCreateNode(array('uid' => $uid));
+    $node4 = $this->drupalCreateNode(['uid' => $uid]);
     $node4->delete();
 
     $this->drupalGet('test_deleted');
@@ -50,16 +50,16 @@ class DeletedTest extends MultiversionTestBase {
    * Tests the _deleted filter when _deleted == 0.
    */
   public function testNotDeleted() {
-    $admin_user = $this->drupalCreateUser(array('bypass node access'));
+    $admin_user = $this->drupalCreateUser(['bypass node access']);
     $uid = $admin_user->id();
     $this->drupalLogin($admin_user);
 
     // Create four nodes and delete two of them.
-    $node1 = $this->drupalCreateNode(array('uid' => $uid));
-    $node2 = $this->drupalCreateNode(array('uid' => $uid));
-    $node3 = $this->drupalCreateNode(array('uid' => $uid));
+    $node1 = $this->drupalCreateNode(['uid' => $uid]);
+    $node2 = $this->drupalCreateNode(['uid' => $uid]);
+    $node3 = $this->drupalCreateNode(['uid' => $uid]);
     $node3->delete();
-    $node4 = $this->drupalCreateNode(array('uid' => $uid));
+    $node4 = $this->drupalCreateNode(['uid' => $uid]);
     $node4->delete();
 
     $this->drupalGet('test_not_deleted');

@@ -14,40 +14,40 @@ abstract class FieldTestBase extends MultiversionWebTestBase {
    *
    * @var array
    */
-  protected $entityTypes = array(
-    'entity_test' => array(),
-    'entity_test_rev' => array(),
-    'entity_test_mul' => array(),
-    'entity_test_mulrev' => array(),
-    'node' => array(
+  protected $entityTypes = [
+    'entity_test' => [],
+    'entity_test_rev' => [],
+    'entity_test_mul' => [],
+    'entity_test_mulrev' => [],
+    'node' =>[
       'type' => 'article',
       'title' => 'New article',
-    ),
-    'taxonomy_term' => array(
+    ],
+    'taxonomy_term' => [
       'name' => 'A term',
       'vid' => 123,
-    ),
-    'comment' => array(
+    ],
+    'comment' => [
       'entity_type' => 'node',
       'field_name' => 'comment',
       'subject' => 'How much wood would a woodchuck chuck',
       'mail' => 'someone@example.com',
-    ),
-    'block_content' =>  array(
+    ],
+    'block_content' => [
       'info' => 'New block',
       'type' => 'basic',
-    ),
-    'menu_link_content' => array(
+    ],
+    'menu_link_content' => [
       'menu_name' => 'menu_test',
       'bundle' => 'menu_link_content',
       'link' => [['uri' => 'user-path:/']],
-    ),
-    'user' => array(
+    ],
+    'user' => [
       'name' => 'User',
       'mail' => 'user@example.com',
       'status' => 1,
-    ),
-  );
+    ],
+  ];
 
   /**
    * @var string
@@ -76,19 +76,20 @@ abstract class FieldTestBase extends MultiversionWebTestBase {
 
   public function testFieldBasics() {
     foreach ($this->entityTypes as $entity_type_id => $info) {
-      $entity = entity_create($entity_type_id, $info);
+      $storage = $this->entityManager->getStorage($entity_type_id);
+      $entity = $storage->create($info);
       $this->assertTrue(is_a($entity->{$this->fieldName}, $this->itemListClass), "Field item list implements correct interface on created $entity_type_id.");
       $count = $entity->{$this->fieldName}->count();
       $this->assertTrue($this->createdEmpty ? empty($count) : !empty($count), "Field is created with no field items for $entity_type_id.");
 
       $entity->save();
       $entity_id = $entity->id();
-      $entity = entity_load($entity_type_id, $entity_id);
+      $entity =  $storage->load($entity_id);
 
       $this->assertFalse($entity->{$this->fieldName}->isEmpty(), "Field was attached on loaded $entity_type_id.");
 
-      entity_delete_multiple($entity_type_id, array($entity_id));
-      $entity = entity_load_deleted($entity_type_id, $entity_id);
+      $storage->loadMultiple([$entity_id]);
+      $entity = $storage->loadDeleted($entity_id);
 
       $this->assertFalse($entity->{$this->fieldName}->isEmpty(), "Field was attached on deleted $entity_type_id.");
     }

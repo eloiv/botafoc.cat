@@ -29,7 +29,7 @@ class Accordion extends FieldGroupFormatterBase {
   /**
    * {@inheritdoc}
    */
-  public function preRender(&$element) {
+  public function preRender(&$element, $rendering_object) {
 
     $form_state = new FormState();
 
@@ -84,10 +84,10 @@ class Accordion extends FieldGroupFormatterBase {
   /**
    * {@inheritdoc}
    */
-  public static function defaultSettings() {
+  public static function defaultContextSettings($context) {
     return array(
       'effect' => 'none',
-    ) + parent::defaultSettings();
+    ) + parent::defaultSettings($context);
   }
 
 }

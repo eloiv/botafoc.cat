@@ -1,0 +1,9 @@
+features:
+  node_user_picture: 1
+  comment_user_picture: true
+  comment_user_verification: true
+  favicon: 1
+favicon:
+  use_default: 0
+  path: profiles/botafoc.cat/themes/bfc_admin_theme/images/logo.png
+  mimetype: image/png

@@ -7,6 +7,8 @@
 
 namespace Drupal\multiversion\Tests;
 
+use Drupal\entity_test\Entity\EntityTestRev;
+
 /**
  * Test the entity sequence functionality.
  *
@@ -25,12 +27,11 @@ class SequenceIndexTest extends MultiversionWebTestBase {
   }
 
   public function testRecord() {
-    /** @var \Drupal\Core\Entity\ContentEntityInterface $entity */
-    $entity = entity_create('entity_test_rev');
+    $entity = EntityTestRev::create();
     // We don't want to save the entity and trigger the hooks in the storage
     // controller. We just want to test the sequence storage here, so we mock
     // entity IDs here.
-    $expected = array(
+    $expected = [
       'entity_type_id' => 'entity_test_rev',
       'entity_id' => 1,
       'entity_uuid' => $entity->uuid(),
@@ -38,14 +39,14 @@ class SequenceIndexTest extends MultiversionWebTestBase {
       'deleted' => FALSE,
       'rev' => FALSE,
       'local' => (boolean) $entity->getEntityType()->get('local'),
-    );
+    ];
     $entity->id->value = $expected['entity_id'];
     $entity->revision_id->value = $expected['revision_id'];
     $entity->_deleted->value = $expected['deleted'];
     $entity->_rev->value = $expected['rev'];
 
     $values = $this->sequenceIndex->getRange(2);
-    $this->assertEqual(count($values), 2, 'There are two index entries');
+    $this->assertEqual(2, count($values), 'There are two index entries');
 
     $this->sequenceIndex->add($entity);
     $expected['seq'] = $this->multiversionManager->lastSequenceId();
@@ -53,20 +54,22 @@ class SequenceIndexTest extends MultiversionWebTestBase {
     // We should have 2 entities of user entity type (anonymous and root user)
     // and one entity_test_rev.
     $values = $this->sequenceIndex->getRange(3);
-    $this->assertEqual(count($values), 3, 'One new index entry was added.');
+    $this->assertEqual(3, count($values), 'One new index entry was added.');
 
     foreach ($expected as $key => $value) {
-      $this->assertIdentical($values[2][$key], $value, "Index entry key $key have value $value");
+      $this->assertIdentical($value, $values[2][$key], "Index entry key $key have value $value");
     }
 
-    $entity = entity_create('entity_test_rev');
+    $entity = EntityTestRev::create();
     $workspace_name = $this->randomMachineName();
-    entity_create('workspace', array('name' => $workspace_name));
+    /** @var \Drupal\Core\Entity\EntityStorageInterface $workspace_storage */
+    $workspace_storage = $this->container->get('entity.manager')->getStorage('workspace');
+    $workspace_storage->create(['name' => $workspace_name]);
     // Generate a new sequence ID.
     $this->sequenceIndex->useWorkspace($workspace_name)->add($entity);
 
     $values = $this->sequenceIndex->getRange(3);
-    $this->assertEqual(count($values), 1, 'One index entry was added to the new workspace.');
+    $this->assertEqual(1, count($values), 'One index entry was added to the new workspace.');
   }
 
 }

@@ -4,8 +4,8 @@ name: Alternate hreflang
 package: Multilingual
 type: module
 
-# Information added by Drupal.org packaging script on 2015-10-01
-version: '8.x-1.x-dev'
+# Information added by Drupal.org packaging script on 2015-11-23
+version: '8.x-1.0'
 core: '8.x'
 project: 'hreflang'
-datestamp: 1443689940
+datestamp: 1448258641

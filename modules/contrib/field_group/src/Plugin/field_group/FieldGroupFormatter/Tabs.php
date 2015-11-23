@@ -28,7 +28,7 @@ class Tabs extends FieldGroupFormatterBase {
   /**
    * {@inheritdoc}
    */
-  public function preRender(&$element) {
+  public function preRender(&$element, $rendering_object) {
 
     $element += array(
       '#prefix' => '<div class=" ' . implode(' ' , $this->getClasses()) . '">',
@@ -118,10 +118,10 @@ class Tabs extends FieldGroupFormatterBase {
   /**
    * {@inheritdoc}
    */
-  public static function defaultSettings() {
+  public static function defaultContextSettings($context) {
     return array(
       'direction' => 'vertical',
-    ) + parent::defaultSettings();
+    ) + parent::defaultContextSettings($context);
   }
 
   /**

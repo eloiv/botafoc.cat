@@ -1,0 +1,18 @@
+status: true
+dependencies: {  }
+id: editor
+label: Editor
+weight: 2
+is_admin: null
+permissions:
+  1: 'access toolbar'
+  2: 'access coffee'
+  3: 'access contextual links'
+  4: 'access content overview'
+  5: 'access administration pages'
+  6: 'view the administration theme'
+  7: 'administer nodes'
+  8: 'bypass node access'
+  9: 'create url aliases'
+  10: 'administer menu'
+  11: 'administer taxonomy'

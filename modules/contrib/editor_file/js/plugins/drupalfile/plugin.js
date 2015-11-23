@@ -9,20 +9,41 @@
 
   "use strict";
 
+  function parseAttributes(element) {
+    var parsedAttributes = {};
+
+    var domElement = element.$;
+    var attribute = null;
+    var attributeName;
+    for (var attrIndex = 0; attrIndex < domElement.attributes.length; attrIndex++) {
+      attribute = domElement.attributes.item(attrIndex);
+      attributeName = attribute.nodeName.toLowerCase();
+      // Don't consider data-cke-saved- attributes; they're just there to work
+      // around browser quirks.
+      if (attributeName.substring(0, 15) === 'data-cke-saved-') {
+        continue;
+      }
+      // Store the value for this attribute, unless there's a data-cke-saved-
+      // alternative for it, which will contain the quirk-free, original value.
+      parsedAttributes[attributeName] = element.data('cke-saved-' + attributeName) || attribute.nodeValue;
+    }
+    return parsedAttributes;
+  }
+
   CKEDITOR.plugins.add('drupalfile', {
     init: function (editor) {
       // Add the commands for file and unfile.
       editor.addCommand('drupalfile', {
-        allowedContent: new CKEDITOR.style({
-          element: 'a',
-          attributes: {
-            '!href': '',
-            'target': '',
-            'title': '',
-            '!data-entity-type': '',
-            '!data-entity-uuid': ''
+        allowedContent: {
+          a: {
+            attributes: {
+              '!href': true,
+              '!data-entity-type': true,
+              '!data-entity-uuid': true
+            },
+            classes: {}
           }
-        }),
+        },
         requiredContent: new CKEDITOR.style({
           element: 'a',
           attributes: {
@@ -34,34 +55,31 @@
         modes: {wysiwyg: 1},
         canUndo: true,
         exec: function (editor) {
+          var drupalImageUtils = CKEDITOR.plugins.drupalimage;
+          var focusedImageWidget = drupalImageUtils && drupalImageUtils.getFocusedWidget(editor);
           var fileElement = getSelectedFile(editor);
-          var fileDOMElement = null;
 
           // Set existing values based on selected element.
           var existingValues = {};
           if (fileElement && fileElement.$) {
-            fileDOMElement = fileElement.$;
-
-            // Populate an array with the file's current attributes.
-            var attribute = null;
-            var attributeName;
-            for (var attrIndex = 0; attrIndex < fileDOMElement.attributes.length; attrIndex++) {
-              attribute = fileDOMElement.attributes.item(attrIndex);
-              attributeName = attribute.nodeName.toLowerCase();
-              // Don't consider data-cke-saved- attributes; they're just there
-              // to work around browser quirks.
-              if (attributeName.substring(0, 15) === 'data-cke-saved-') {
-                continue;
-              }
-              // Store the value for this attribute, unless there's a
-              // data-cke-saved- alternative for it, which will contain the
-              // quirk-free, original value.
-              existingValues[attributeName] = fileElement.data('cke-saved-' + attributeName) || attribute.nodeValue;
-            }
+            existingValues = parseAttributes(fileElement);
+          }
+          // Or, if an image widget is focused, we're editing a link wrapping
+          // an image widget.
+          else if (focusedImageWidget && focusedImageWidget.data.link) {
+            existingValues = CKEDITOR.tools.clone(focusedImageWidget.data.link);
           }
 
           // Prepare a save callback to be used upon saving the dialog.
           var saveCallback = function (returnValues) {
+            // If an image widget is focused, we're not editing an independent
+            // link, but we're wrapping an image widget in a link.
+            if (focusedImageWidget) {
+              focusedImageWidget.setData('link', CKEDITOR.tools.extend(returnValues.attributes, focusedImageWidget.data.link));
+              editor.fire('saveSnapshot');
+              return;
+            }
+
             editor.fire('saveSnapshot');
 
             // Create a new file element if needed.
@@ -72,19 +90,17 @@
               // Use the link title or the file name as text with a collapsed
               // cursor.
               if (range.collapsed) {
-                var text = returnValues.attributes.title;
-                if (!text.length) {
+                var text;
+                if (returnValues.attributes.title && returnValues.attributes.title.length) {
+                  text = returnValues.attributes.title;
+                }
+                else {
                   text = returnValues.attributes.href;
                   text = text.substr(text.lastIndexOf('/') + 1);
                 }
                 text = new CKEDITOR.dom.text(text, editor.document);
                 range.insertNode(text);
                 range.selectNodeContents(text);
-              }
-
-              // Ignore a disabled target attribute.
-              if (returnValues.attributes.target === 0) {
-                delete returnValues.attributes.target;
               }
 
               // Create the new file by applying a style to the new text.
@@ -129,28 +145,6 @@
           Drupal.ckeditor.openDialog(editor, Drupal.url('editor_file/dialog/file/' + editor.config.drupal.format), existingValues, saveCallback, dialogSettings);
         }
       });
-      editor.addCommand('drupalunfile', {
-        contextSensitive: 1,
-        startDisabled: 1,
-        allowedContent: 'a[!href]',
-        requiredContent: 'a[href]',
-        exec: function (editor) {
-          var style = new CKEDITOR.style({element: 'a', type: CKEDITOR.STYLE_INLINE, alwaysRemoveElement: 1});
-          editor.removeStyle(style);
-        },
-        refresh: function (editor, path) {
-          var element = path.lastElement && path.lastElement.getAscendant('a', true);
-          if (element && element.getName() === 'a' && element.getAttribute('href') && element.getChildCount()) {
-            this.setState(CKEDITOR.TRISTATE_OFF);
-          }
-          else {
-            this.setState(CKEDITOR.TRISTATE_DISABLED);
-          }
-        }
-      });
-
-      // CTRL + K.
-      editor.setKeystroke(CKEDITOR.CTRL + 75, 'drupalfile');
 
       // Add buttons for file upload.
       if (editor.ui.addButton) {
@@ -165,7 +159,7 @@
         var element = getSelectedFile(editor) || evt.data.element;
 
         if (!element.isReadOnly()) {
-          if (element.is('a')) {
+          if (element.is('a') && element.getAttribute('data-entity-uuid')) {
             editor.getSelection().selectElement(element);
             editor.getCommand('drupalfile').exec();
           }
@@ -178,7 +172,7 @@
           file: {
             label: Drupal.t('Edit File'),
             command: 'drupalfile',
-            group: 'file',
+            group: 'link',
             order: 1
           }
         });
@@ -197,28 +191,9 @@
 
           var menu = {};
           if (anchor.getAttribute('href') && anchor.getChildCount()) {
-            menu = {file: CKEDITOR.TRISTATE_OFF, unfile: CKEDITOR.TRISTATE_OFF};
+            menu = {file: CKEDITOR.TRISTATE_OFF};
           }
           return menu;
-        });
-      }
-    },
-
-    // Disable image2's integration with the link/drupallink plugins: don't
-    // allow the widget itself to become a link. Support for that may be added
-    // by an text filter that adds a data- attribute specifically for that.
-    afterInit: function (editor) {
-      if (editor.plugins.drupallink) {
-        var cmd = editor.getCommand('drupallink');
-        // Needs to be refreshed on selection changes.
-        cmd.contextSensitive = 1;
-        // Disable command and cancel event when the image widget is selected.
-        cmd.on('refresh', function (evt) {
-          var path = evt.data.path;
-          var element = path.lastElement && path.lastElement.getAscendant('a', true);
-          if (element && element.getName() === 'a' && element.getAttribute('data-entity-uuid')) {
-            this.setState(CKEDITOR.TRISTATE_DISABLED);
-          }
         });
       }
     }

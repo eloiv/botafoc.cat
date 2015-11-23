@@ -10,14 +10,14 @@ body.install-page {
   background-image: none;
 }
 
-header {
+.install-page header {
   text-align: center;
   padding-bottom: 15px;
   margin-bottom: 15px;
   border-bottom: solid 1px #008080;
 }
 
-h1.page-title {
+.install-page h1.page-title {
   width: 100%;
   margin: 0px;
 }
@@ -26,10 +26,14 @@ h1.page-title {
   font-size: 1.0em;
 }
 
-aside.layout-sidebar-first {
+.install-page aside.layout-sidebar-first {
   float: right;
 }
 
-ol.task-list .is-active::after {
+.install-page ol.task-list .is-active::after {
   border-width: 0px;
+}
+
+.toolbar-icon-admin-toolbar-tools-help::before {
+  background-image: url("../../images/botafoc.png")
 }

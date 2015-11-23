@@ -20,13 +20,13 @@ abstract class MultiversionTestBase extends ViewTestBase {
    *
    * @var array
    */
-  public static $modules = array('multiversion_test_views');
+  public static $modules = ['multiversion_test_views'];
 
   protected function setUp($import_test_views = TRUE) {
     parent::setUp($import_test_views);
 
     if ($import_test_views) {
-      ViewTestData::createTestViews(get_class($this), array('multiversion_test_views'));
+      ViewTestData::createTestViews(get_class($this), ['multiversion_test_views']);
     }
   }
 

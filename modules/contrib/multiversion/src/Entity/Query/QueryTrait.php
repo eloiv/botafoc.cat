@@ -78,7 +78,7 @@ trait QueryTrait {
     }
     // Don't add this condition user entity type.
     if ($entity_type->id() !== 'user') {
-      $this->condition('workspace', $this->workspaceId ?: \Drupal::service('multiversion.manager')->getActiveWorkspaceId());
+      $this->condition('workspace', $this->workspaceId ?: $this->multiversionManager->getActiveWorkspaceId());
     }
     return $this;
   }

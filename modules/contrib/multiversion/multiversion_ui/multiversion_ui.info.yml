@@ -6,8 +6,8 @@ description: 'User interface for the Multiversion module.'
 dependencies:
   - multiversion
 
-# Information added by Drupal.org packaging script on 2015-10-25
-version: '8.x-1.x-dev'
+# Information added by Drupal.org packaging script on 2015-11-19
+version: '8.x-1.0-alpha1'
 core: '8.x'
 project: 'multiversion'
-datestamp: 1445769540
+datestamp: 1447951765

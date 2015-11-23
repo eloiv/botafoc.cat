@@ -1,4 +1,4 @@
-global-styling:
+bfc-styling:
   css:
     theme:
       css/theme/install-page.css: {}

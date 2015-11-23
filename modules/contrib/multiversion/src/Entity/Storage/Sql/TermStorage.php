@@ -17,8 +17,6 @@ use Drupal\taxonomy\TermStorage as CoreTermStorage;
 class TermStorage extends CoreTermStorage implements ContentEntityStorageInterface {
 
   use ContentEntityStorageTrait {
-    // @todo: {@link https://www.drupal.org/node/2597526 Rename to doDelete
-    // for consistency with other storage handlers.}
     delete as deleteEntities;
   }
 

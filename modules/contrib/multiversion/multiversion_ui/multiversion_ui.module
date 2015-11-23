@@ -23,7 +23,7 @@ function multiversion_ui_entity_type_alter(array &$entity_types) {
   $manager = \Drupal::service('multiversion.manager');
 
   foreach ($entity_types as $entity_type) {
-    if ($manager->isSupportedEntityType($entity_type)) {
+    if ($manager->isEnabledEntityType($entity_type)) {
       if ($entity_type->hasViewBuilderClass() && $entity_type->hasLinkTemplate('canonical')) {
         $entity_type->setLinkTemplate('version-history', $entity_type->getLinkTemplate('canonical') . '/revisions');
         $entity_type->setLinkTemplate('revision', $entity_type->getLinkTemplate('canonical') . '/revisions/{' . $entity_type->id() . '_revision}/view');
@@ -58,7 +58,7 @@ function template_preprocess_multiversion_rev(&$variables) {
   $title = Unicode::truncate($rev, $length, FALSE, TRUE);
 
   if (!empty($rev_info['revision_id'])) {
-    $entity_revision = entity_revision_load($rev_info['entity_type_id'], $rev_info['revision_id']);
+    $entity_revision = \Drupal::entityManager()->getStorage($rev_info['entity_type_id'])->loadRevision($rev_info['revision_id']);
     $variables['title'] = \Drupal::l($title, $entity_revision->urlInfo('revision'));
   }
   else {

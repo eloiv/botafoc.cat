@@ -7,44 +7,53 @@
 
 namespace Drupal\multiversion\Tests;
 
+use Drupal\KernelTests\KernelTestBase;
+use Drupal\multiversion\Entity\Workspace;
 use Drupal\multiversion\Entity\WorkspaceInterface;
-use Drupal\simpletest\WebTestBase;
 
 /**
  * Test the workspace entity.
  *
  * @group multiversion
  */
-class WorkspaceTest extends WebTestBase {
+class WorkspaceTest extends KernelTestBase {
 
   protected $strictConfigSchema = FALSE;
 
-  public static $modules = array('multiversion');
+  public static $modules = ['multiversion', 'key_value', 'serialization'];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() {
+    parent::setUp();
+    $this->installConfig(['multiversion']);
+  }
 
   public function testOperations() {
-    $default = entity_load('workspace', 'default');
+    $default = Workspace::load('default');
     $this->assertTrue(!empty($default), 'Default workspace was created when installing Multiversion module.');
     $id = $this->randomMachineName();
-    $entity = entity_create('workspace', array('id' => $id));
+    $entity = Workspace::create(['id' => $id]);
 
     $this->assertTrue($entity instanceof WorkspaceInterface, 'Workspace entity was created.');
 
     $entity->save();
-    $this->assertEqual($entity->id(), $id, 'Workspace entity was saved.');
+    $this->assertEquals($id, $entity->id(), 'Workspace entity was saved.');
 
-    $entity = entity_load('workspace', $entity->id());
-    $this->assertEqual($entity->id(), $id, 'Workspace entity was loaded by ID.');
+    $entity = Workspace::load($entity->id());
+    $this->assertEquals($id, $entity->id(), 'Workspace entity was loaded by ID.');
 
     $entity = \Drupal::entityManager()->loadEntityByUuid('workspace', $entity->uuid());
-    $this->assertEqual($entity->id(), $id, 'Workspace entity was loaded by UUID.');
-    $this->assertEqual($entity->label(), $id, 'Label method returns the workspace name.');
+    $this->assertEquals($id, $entity->id(), 'Workspace entity was loaded by UUID.');
+    $this->assertEquals($id, $entity->label(), 'Label method returns the workspace name.');
 
     $created = $entity->getStartTime();
     $this->assertNotNull($created, "The value for 'created' field is not null.");
 
     $new_created_time = microtime(TRUE) * 1000000;
     $entity->setCreatedTime((int) $new_created_time);
-    $this->assertEqual($entity->getStartTime(), $new_created_time, "Correct value for 'created' field.");
+    $this->assertEquals($new_created_time, $entity->getStartTime(), "Correct value for 'created' field.");
   }
 
 }

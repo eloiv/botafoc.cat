@@ -8,12 +8,10 @@
 namespace Drupal\multiversion\Tests;
 
 use Drupal\comment\Tests\CommentTestTrait;
-use Drupal\Component\Utility\Unicode;
 use Drupal\simpletest\WebTestBase;
 
 /**
- * @todo: {@link https://www.drupal.org/node/2597492 Change to extending
- * DrupalUnitTestBase to increase performance.}
+ * Defines a base class for testing the Multiversion module.
  */
 abstract class MultiversionWebTestBase extends WebTestBase {
 
@@ -64,7 +62,7 @@ abstract class MultiversionWebTestBase extends WebTestBase {
    */
   protected $entityDefinitionUpdateManager;
 
-  public static $modules = array(
+  public static $modules = [
     'entity_test',
     'multiversion',
     'node',
@@ -73,8 +71,11 @@ abstract class MultiversionWebTestBase extends WebTestBase {
     'block_content',
     'menu_link_content',
     'file',
-  );
+  ];
 
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp() {
     parent::setUp();
 
@@ -89,37 +90,10 @@ abstract class MultiversionWebTestBase extends WebTestBase {
 
     // Create Basic page and Article node types.
     if ($this->profile != 'standard') {
-      $this->drupalCreateContentType(array('type' => 'article', 'name' => 'Article'));
+      $this->drupalCreateContentType(['type' => 'article', 'name' => 'Article']);
     }
     // Create comment field on article.
     $this->addDefaultCommentField('node', 'article');
-  }
-
-  /**
-   * Returns a new vocabulary with random properties.
-   */
-  function createVocabulary() {
-    // Create a vocabulary.
-    $vocabulary = entity_create('taxonomy_vocabulary', array(
-      'name' => $this->randomMachineName(),
-      'vid' => Unicode::strtolower($this->randomMachineName()),
-    ));
-    $vocabulary->save();
-    return $vocabulary;
-  }
-
-  /**
-   * Returns a new menu with random properties.
-   */
-  function createMenu() {
-    // Create a menu.
-    $menu = entity_create('menu', array(
-      'id' => 'menu_test',
-      'label' => 'Test menu',
-      'description' => 'Description text',
-    ));
-    $menu->save();
-    return $menu;
   }
 
 }

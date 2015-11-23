@@ -8,15 +8,21 @@
 namespace Drupal\multiversion\Tests;
 
 use Drupal\Core\Entity\ContentEntityTypeInterface;
+use Drupal\entity_test\Entity\EntityTestRev;
+use Drupal\simpletest\WebTestBase;
 
 /**
  * Test the MultiversionManager class.
  *
  * @group multiversion
  */
-class MultiversionManagerTest extends MultiversionWebTestBase {
+class MultiversionManagerTest extends WebTestBase {
 
   const REVISION_HASH_REGEX = '[0-9a-f]{32}';
+
+  protected $strictConfigSchema = FALSE;
+
+  public static $modules = ['multiversion', 'entity_test'];
 
   /**
    * @var \Drupal\multiversion\MultiversionManager
@@ -38,7 +44,7 @@ class MultiversionManagerTest extends MultiversionWebTestBase {
   }
 
   public function testRevisionIdGeneration() {
-    $entity = entity_create('entity_test_rev');
+    $entity = EntityTestRev::create();
     $first_rev = $this->multiversionManager->newRevisionId($entity, 0);
     $this->assertRevisionId(1, $first_rev, 'First revision ID was generated correctly.');
 
@@ -50,7 +56,7 @@ class MultiversionManagerTest extends MultiversionWebTestBase {
 
     $this->assertEqual($this->extractRevisionHash($first_rev), $this->extractRevisionHash($second_rev), 'First and second revision hashes was identical (entity did not change).');
 
-    $revs = array($first_rev);
+    $revs = [$first_rev];
 
     $test_entity = clone $entity;
     $test_entity->_rev->value = $first_rev;

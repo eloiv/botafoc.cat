@@ -7,12 +7,23 @@
 
 namespace Drupal\multiversion\Tests;
 
+use Drupal\menu_link_content\Entity\MenuLinkContent;
+use Drupal\multiversion\Entity\Workspace;
+use Drupal\simpletest\WebTestBase;
+
 /**
  * Tests menu links deletion.
  *
  * @group multiversion
  */
-class MenuLinkTest extends MultiversionWebTestBase {
+class MenuLinkTest extends WebTestBase {
+
+  protected $strictConfigSchema = FALSE;
+
+  /**
+   * @var \Drupal\multiversion\Workspace\WorkspaceManager
+   */
+  protected $workspaceManager;
 
   /**
    * Modules to enable.
@@ -22,7 +33,7 @@ class MenuLinkTest extends MultiversionWebTestBase {
   public static $modules = array(
     'multiversion',
     'menu_link_content',
-    'menu_ui',
+    'block'
   );
 
   /**
@@ -30,35 +41,46 @@ class MenuLinkTest extends MultiversionWebTestBase {
    */
   protected function setUp() {
     parent::setUp();
+    $this->workspaceManager = \Drupal::service('workspace.manager');
     $web_user = $this->drupalCreateUser(array('administer menu'));
     $this->drupalLogin($web_user);
+    $this->drupalPlaceBlock('system_menu_block:main');
+
+    Workspace::create(['id' => 'foo'])->save();
   }
 
-  public function testMenuLinkDelete() {
-    $this->drupalGet('admin/structure/menu/manage/admin/add');
-    $element = $this->xpath('//select[@id = :id]/option[@selected]', array(':id' => 'edit-menu-parent'));
-    $this->assertTrue($element, 'A default menu parent was found.');
-    $this->assertEqual('admin:', $element[0]['value'], '<Administration> menu is the parent.');
+  public function testMenuLinksInDifferentWorkspaces() {
+    MenuLinkContent::create([
+      'menu_name' => 'main',
+      'link' => 'route:user.page',
+      'title' => 'Pineapple'
+    ])->save();
 
-    $this->drupalPostForm(
-      NULL,
-      array(
-        'title[0][value]' => t('Front page'),
-        'link[0][uri]' => '<front>',
-      ),
-      t('Save')
-    );
-    $this->assertText(t('The menu link has been saved.'));
-    $this->drupalGet('admin/structure/menu/manage/admin');
-    $this->assertLink(t('Front page'));
-    $this->drupalGet('admin/structure/menu/item/1/delete');
-    $this->drupalPostForm(NULL, array(), t('Delete'));
-    $this->drupalGet('admin/structure/menu/manage/admin');
-    $this->assertNoLink(t('Front page'));
-    $entity = entity_load('menu_link_content', 1);
-    $this->assertNull($entity, 'Deleted menu link was not loaded.');
-    $deleted_entity = entity_load_deleted('menu_link_content', 1);
-    $this->assertNotNull($deleted_entity, 'Deleted menu link was loaded as deleted.');
+    $this->drupalGet('user/2');
+    $this->assertLink('Pineapple');
+
+    $this->drupalGet('user/2', ['query' => ['workspace' => 'foo']]);
+    $this->assertNoLink('Pineapple');
+
+    // The previous page request only changed workspace for the session of the
+    // request. We have to switch workspace in the test context as well.
+    $this->workspaceManager->setActiveWorkspace(Workspace::load('foo'));
+    // Save another menu link.
+    MenuLinkContent::create([
+      'menu_name' => 'main',
+      'link' => 'route:user.page',
+      'title' => 'Pear',
+    ])->save();
+
+    $this->drupalGet('user/2');
+    $this->assertNoLink('Pineapple');
+    $this->assertLink('Pear');
+
+    // Switch back to the default workspace and ensure the menu links render
+    // as expected.
+    $this->drupalGet('user/2', ['query' => ['workspace' => 'default']]);
+    $this->assertLink('Pineapple');
+    $this->assertNoLink('Pear');
   }
 
 }
