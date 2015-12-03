@@ -4,7 +4,7 @@ core: 8.x
 type: module
 configure: coffee.configuration
 
-# Information added by drush on 2015-11-23
+# Information added by drush on 2015-12-03
 version: '8.x-1.x-dev'
 project: 'coffee'
-datestamp: 1448282600
+datestamp: 1449147102
