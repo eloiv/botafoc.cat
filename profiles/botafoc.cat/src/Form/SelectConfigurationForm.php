@@ -19,16 +19,10 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class SelectConfigurationForm extends FormBase {
 
-  /**
-   * {@inheritdoc}
-   */
   public function getFormId() {
     return 'install_select_configuration_form';
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function buildForm(array $form, FormStateInterface $form_state, $install_state = NULL) {
     $form['#title'] = 'Choose configuration';
 
@@ -80,15 +74,12 @@ class SelectConfigurationForm extends FormBase {
     return $form;
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $this->_move_all_config_files_directory('general');
     $this->_move_all_config_files_directory('seven');
     $this->_move_all_config_files_directory('bfc_admin_theme');
     $this->_move_all_config_files_directory('bartik');
-    $this->_move_all_config_files_directory('filters_editors');
+    $this->_move_all_config_files_directory('text_formats_editors');
     $this->_move_all_config_files_directory('user');
 
     if(!empty($_GET['langcodes'])){

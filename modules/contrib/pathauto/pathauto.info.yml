@@ -11,7 +11,7 @@ configure: pathauto.patterns.form
 
 recommends:
 - redirect
-# Information added by drush on 2015-12-03
+# Information added by drush on 2015-12-10
 version: '8.x-1.x-dev'
 project: 'pathauto'
-datestamp: 1449147105
+datestamp: 1449753542

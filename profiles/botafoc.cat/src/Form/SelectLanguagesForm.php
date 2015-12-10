@@ -19,16 +19,10 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class SelectLanguagesForm extends FormBase {
 
-  /**
-   * {@inheritdoc}
-   */
   public function getFormId() {
     return 'install_select_languages_form';
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function buildForm(array $form, FormStateInterface $form_state, $install_state = NULL) {
     if (count($install_state['translations']) > 1) {
       $files = $install_state['translations'];
@@ -100,9 +94,6 @@ class SelectLanguagesForm extends FormBase {
     return $form;
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $build_info = $form_state->getBuildInfo();
     $build_info['args'][0]['parameters']['langcode'] = $form_state->getValue('langcode');

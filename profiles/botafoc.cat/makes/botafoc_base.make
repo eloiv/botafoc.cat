@@ -3,23 +3,23 @@
 
 ; Administration
 projects[admin_toolbar][subdir] = contrib
-projects[trash][subdir] = contrib
-projects[multiversion][subdir] = contrib
-projects[key_value][subdir] = contrib
 projects[menu_link_attributes][subdir] = contrib
 
 projects[coffee][subdir] = contrib
-projects[coffee][download][type] = "git"
-projects[coffee][download][url] = "http://git.drupal.org/project/coffee.git"
-projects[coffee][download][branch] = "8.x-1.x"
-projects[coffee][download][revision] = "6689904"
-projects[coffee][patch][] = "https://www.drupal.org/files/issues/coffee-fix_once-2486843-2.patch"
 
 ; Fields
 projects[field_group][subdir] = contrib
 projects[fff][subdir] = contrib
 projects[fences][subdir] = contrib
+projects[image_formatter_link_to_image_style][subdir] = contrib
+
+; Text Formats and Editors
 projects[editor_file][subdir] = contrib
+projects[editor_advanced_link][subdir] = contrib
+
+; Taxonomies
+projects[taxonomy_access_fix][subdir] = contrib
+projects[taxonomy_machine_name][subdir] = contrib
 
 ; Multilanguage
 ; projects[lang_dropdown][subdir] = contrib
@@ -46,9 +46,5 @@ projects[logouttab][subdir] = contrib
 ; Help
 projects[advanced_help][subdir] = contrib
 
-; Botafoc.cat
-
-projects[botafoc_ux][subdir] = sandbox
-projects[botafoc_ux][download][type] = "git"
-projects[botafoc_ux][download][url] = "http://git.drupal.org/sandbox/eloiv/2610374.git"
-projects[botafoc_ux][download][branch] = "master"
+; Performance
+projects[big_pipe][subdir] = contrib

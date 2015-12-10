@@ -43,14 +43,22 @@ dependencies:
   - admin_toolbar
   - admin_toolbar_tools
   - coffee
-  - trash
+  # - mpac
 
   # Fields
   - field_group
   - menu_link_attributes
   - fff
   - fences
+  - image_formatter_link_to_image_style
+
+  # Text formats and Editors
   - editor_file
+  - editor_advanced_link
+
+  # Taxonomies
+  - taxonomy_access_fix
+  - taxonomy_machine_name
 
   # UX
   - extlink
@@ -65,8 +73,8 @@ dependencies:
   # Tokens
   - token
 
-  # Botafoc.cat
-  - botafoc_ux
+  # Performance
+  - big_pipe
 
 themes:
   - bartik

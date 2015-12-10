@@ -1,2 +1,0 @@
-multiversion.revisions:
-  deriver: '\Drupal\multiversion_ui\Plugin\Derivative\RevisionsContextual'

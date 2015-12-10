@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Enables modules and site configuration for a minimal site installation.
- */
-
 use Drupal\Core\Config\StorageComparer;
 use Drupal\Core\Config\ConfigImporter;
 use Drupal\Core\Config\ConfigImporterException;
@@ -12,10 +7,6 @@ use Drupal\Core\Language\LanguageManager;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\language\Entity\ConfigurableLanguage;
 
-/**
- * Need to do a manual include since this install profile never actually gets
- * installed so therefore its code cannot be autoloaded.
- */
 include_once __DIR__ . '/src/Form/SelectLanguagesForm.php';
 include_once __DIR__ . '/src/Form/SelectConfigurationForm.php';
 
@@ -23,12 +14,13 @@ function botafoc_install_tasks_alter(&$tasks, $install_state) {
   $all_tasks = $tasks;
   $tasks = array();
 
-  // Define first task
+  // Define first task Select languages
   $tasks['install_select_languages'] = array(
     'display_name' => t('Select languages'),
     'run' => INSTALL_TASK_RUN_IF_REACHED,
   );
 
+  // Define second task Select configuration
   $tasks['install_select_configuration'] = array(
     'display_name' => t('Select configuration'),
   );
@@ -37,8 +29,7 @@ function botafoc_install_tasks_alter(&$tasks, $install_state) {
   foreach($all_tasks as $key => $value) {
     $tasks[$key] = $value;
 
-    // Is required to install_configuration executed after install_import_translation.
-    // Solved problem with english
+    // Is required to install_configuration executed after install_import_translations.
     if ($key == 'install_import_translations') {
       $tasks['install_initial_configuration'] = array(
         'display_name' => t('Install configuration'),
