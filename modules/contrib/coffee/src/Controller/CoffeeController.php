@@ -13,7 +13,6 @@ use Drupal\Component\Utility\Xss;
 use Drupal\Core\Menu\MenuTreeParameters;
 use Drupal\Core\Url;
 
-
 /**
  * Provides route responses for coffee.module.
  */
@@ -46,7 +45,6 @@ class CoffeeController extends ControllerBase {
       }
     }
 
-    module_load_include('inc', 'coffee', 'coffee.hooks');
     $commands = array();
 
     foreach (\Drupal::moduleHandler()

@@ -10,3 +10,6 @@ coffee.configuration:
       sequence:
         - type: string
           label: 'Menu'
+    max_results:
+      type: integer
+      label: 'Number of items to show in the search result'

@@ -4,7 +4,7 @@ use Drupal\Core\Routing\RouteMatchInterface;
 
 /**
  * @file
- * Prvides extra menu links for admin_toolbar.
+ * Provides extra menu links for admin_toolbar.
  */
 
 /**
@@ -34,7 +34,7 @@ function admin_toolbar_tools_help($route_name, RouteMatchInterface $route_match)
     case 'help.page.admin_toolbar_tools':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('The Admin Toolbar Tools module allows you to to add more fonctionalities to the toolbar like flush caches, runnig cron.') . '</p>';
+      $output .= '<p>' . t('The Admin Toolbar Tools module allows you to to add more functionalities to the toolbar like flush caches, running cron.') . '</p>';
       return $output;
   }
 }
@@ -90,11 +90,10 @@ function admin_toolbar_tools_menu_links_discovered_alter(&$links) {
       'route_name' => 'entity.user_role.collection',
       'parent' => 'entity.user.collection',
     );
-    $links['user.logout'] = array(
+    $links['user.logoutt'] = array(
       'title' => 'Logout',
       'route_name' => 'user.logout',
       'parent' => 'admin_toolbar_tools.help',
-      'weight' => 10,
     );
     $links['user.role_add'] = array(
       'title' => 'Add role',
@@ -344,5 +343,14 @@ function admin_toolbar_tools_menu_links_discovered_alter(&$links) {
       'parent' => 'admin_development'
     );
 
+  }
+  // If module views_ui enabled.
+  if (\Drupal::moduleHandler()->moduleExists('views_ui')) {
+    $links['views_ui.add'] = array(
+      'title' => 'Add new view',
+      'route_name' => 'views_ui.add',
+      'parent' => 'entity.view.collection',
+      'weight' => -5,
+    );
   }
 }

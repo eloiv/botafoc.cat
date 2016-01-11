@@ -5,6 +5,9 @@
  * Hooks provided by Coffee module.
  */
 
+use Drupal\Core\Url;
+use Drupal\views\Views;
+
 /**
  * @addtogroup hooks
  * @{
@@ -20,30 +23,26 @@ function hook_coffee_commands() {
 
   // Basic example, for 1 result.
   $commands[] = array(
-    'value' => 'Simple',
-    'label' => 'node/example',
-    // Every result should include should include a command.
+    'value' => Url::fromRoute('my.simple.route')->toString(),
+    'label' => 'Simple',
+    // Every result should include a command.
     'command' => ':simple',
   );
 
-
-  // More advanced example to include a view.
-  $view = Drupal::getView();
-
-  if ($view) {
-    $view->set_display('default');
-    $view->pre_execute();
+  // More advanced example to include view results.
+  if ($view = Views::getView('frontpage')) {
+    $view->setDisplay();
+    $view->preExecute();
     $view->execute();
-  
-    if (count($view->result) > 0) {
-      foreach ($view->result as $row) {
-        $commands[] = array(
-          'value' => ltrim(url('node/' . $row->nid), '/'),
-          'label' => Drupal::checkPlain('Pub: ' . $row->node_title),
-          // You can also specify commands that if the user enters, this command should show.
-          'command' => ':x',
-        );
-      }
+
+    foreach ($view->result as $row) {
+      $entity = $row->_entity;
+      $commands[] = array(
+        'value' => $entity->toUrl()->toString(),
+        'label' => 'Pub: ' . $entity->label(),
+        // You can also specify commands that if the user enters, this command should show.
+        'command' => ':x' . ' ' . $entity->label(),
+      );
     }
   }
 
