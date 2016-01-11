@@ -21,7 +21,7 @@ class CoffeeTest extends WebTestBase {
    *
    * @var array
    */
-  public static $modules = ['coffee', 'menu_ui'];
+  public static $modules = ['coffee'];
 
   /**
    * The user for tests.
@@ -66,10 +66,12 @@ class CoffeeTest extends WebTestBase {
     $this->drupalGet('admin/config/user-interface/coffee');
     $this->assertResponse(200);
     $this->assertFieldChecked('edit-coffee-menus-admin', 'The admin menu is enabled by default');
+    $this->assertFieldById('edit-max-results', 7, 'The max results is 7 by default');
 
     $edit = [
       'coffee_menus[tools]' => 'tools',
-      'coffee_menus[account]' => 'account'
+      'coffee_menus[account]' => 'account',
+      'max_results' => 15,
     ];
     $this->drupalPostForm('admin/config/user-interface/coffee', $edit, t('Save configuration'));
     $this->assertText(t('The configuration options have been saved.'));
@@ -81,6 +83,39 @@ class CoffeeTest extends WebTestBase {
     ];
     $config = \Drupal::config('coffee.configuration')->get('coffee_menus');
     $this->assertEqual($expected, $config, 'The configuration options have been properly saved');
+
+    $config = \Drupal::config('coffee.configuration')->get('max_results');
+    $this->assertEqual(15, $config, 'The configuration options have been properly saved');
+  }
+
+  /**
+   * Tests coffee configuration cache tags invalidation.
+   */
+  public function testCoffeeCacheTagsInvalidation() {
+    // Coffee is not loaded for users without the adequate permission,
+    // so no cache tags for coffee configuration are added.
+    $this->drupalGet('');
+    $this->assertNoCacheTag('config:coffee.configuration');
+
+    // Make sure that the coffee configuration cache tags are present
+    // for users with the adequate permission.
+    $this->drupalLogin($this->coffeeUser);
+    $this->drupalGet('');
+    $this->assertCacheTag('config:coffee.configuration');
+    $settings = $this->getDrupalSettings();
+    $this->assertEqual(7, $settings['coffee']['maxResults']);
+
+    // Trigger a config save which should clear the page cache, so we should get
+    // the fresh configuration settings.
+    $max_results = 10;
+    $this->config('coffee.configuration')
+      ->set('max_results', $max_results)
+      ->save();
+
+    $this->drupalGet('');
+    $this->assertCacheTag('config:coffee.configuration');
+    $settings = $this->getDrupalSettings();
+    $this->assertEqual($max_results, $settings['coffee']['maxResults']);
   }
 
   /**

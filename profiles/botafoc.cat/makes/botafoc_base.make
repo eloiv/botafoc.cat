@@ -12,6 +12,7 @@ projects[field_group][subdir] = contrib
 projects[fff][subdir] = contrib
 projects[fences][subdir] = contrib
 projects[image_formatter_link_to_image_style][subdir] = contrib
+projects[image_styles_mapping][subdir] = contrib
 
 ; Text Formats and Editors
 projects[editor_file][subdir] = contrib

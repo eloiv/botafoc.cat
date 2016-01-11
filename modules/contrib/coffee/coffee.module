@@ -5,16 +5,25 @@
  * Coffee primary module file.
  */
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Url;
 
 /**
  * Implements hook_page_attachments().
  */
-function coffee_page_attachments(&$attachments) {
+function coffee_page_attachments(array &$attachments) {
   if (\Drupal::currentUser()->hasPermission('access coffee')) {
+    $config = \Drupal::config('coffee.configuration');
+    $cache_tags = isset($attachments['#cache']['tags']) ? $attachments['#cache']['tags'] : [];
+    $attachments['#cache']['tags'] = Cache::mergeTags($cache_tags, $config->getCacheTags());
+
     $attachments['#attached']['library'][] = 'coffee/drupal.coffee';
+    $attachments['#attached']['drupalSettings']['coffee'] = [
+      'maxResults' => $config->get('max_results'),
+    ];
   }
 }
+
 
 /**
  * Implements hook_hook_info().

@@ -92,8 +92,7 @@
             // We want to limit the number of results.
             $(DrupalCoffee.field).data(autocomplete_data_element)._renderMenu = function (ul, items) {
               var self = this;
-              //@todo: max should be in Drupal.settings var.
-              items = items.slice(0, 7);
+              items = items.slice(0, drupalSettings.coffee.maxResults);
               $.each(items, function (index, item) {
                 self._renderItemData(ul, item);
               });

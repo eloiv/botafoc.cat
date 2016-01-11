@@ -1,0 +1,6 @@
+{
+  "name": "drupal/image_styles_mapping",
+  "description": "Image Styles Mapping",
+  "type": "drupal-module",
+  "license": "GPL-2.0+"
+}
