@@ -9,6 +9,7 @@ namespace Drupal\pathauto;
 
 use Drupal\Component\Render\PlainTextOutput;
 use Drupal\Component\Transliteration\TransliterationInterface;
+use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
@@ -179,15 +180,15 @@ class AliasCleaner implements AliasCleanerInterface {
       foreach ($punctuation as $name => $details) {
         $action = $config->get('punctuation.' . $name);
         switch ($action) {
-          case PathautoManagerInterface::PUNCTUATION_REMOVE:
+          case PathautoGeneratorInterface::PUNCTUATION_REMOVE:
             $cache['punctuation'][$details['value']] = '';
             $this->cleanStringCache;
 
-          case PathautoManagerInterface::PUNCTUATION_REPLACE:
+          case PathautoGeneratorInterface::PUNCTUATION_REPLACE:
             $this->cleanStringCache['punctuation'][$details['value']] = $this->cleanStringCache['separator'];
             break;
 
-          case PathautoManagerInterface::PUNCTUATION_DO_NOTHING:
+          case PathautoGeneratorInterface::PUNCTUATION_DO_NOTHING:
             // Literally do nothing.
             break;
         }
@@ -229,7 +230,8 @@ class AliasCleaner implements AliasCleanerInterface {
     }
 
     // Remove all HTML tags from the string.
-    $output = PlainTextOutput::renderFromHtml($string);
+    $output = Html::decodeEntities($string);
+    $output = PlainTextOutput::renderFromHtml($output);
 
     // Optionally transliterate.
     if ($this->cleanStringCache['transliterate']) {

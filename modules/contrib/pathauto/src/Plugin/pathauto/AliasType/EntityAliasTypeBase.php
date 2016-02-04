@@ -7,19 +7,25 @@
 
 namespace Drupal\pathauto\Plugin\pathauto\AliasType;
 
-use Drupal\Component\Utility\NestedArray;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
-use Drupal\Core\Plugin\PluginBase;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Plugin\ContextAwarePluginBase;
+use Drupal\pathauto\AliasTypeBatchUpdateInterface;
 use Drupal\pathauto\AliasTypeInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * A base class for Alias Type plugins.
+ * A pathauto alias type plugin for entities with canonical links.
+ *
+ * @AliasType(
+ *   id = "canonical_entities",
+ *   deriver = "\Drupal\pathauto\Plugin\Deriver\EntityAliasTypeDeriver"
+ * )
  */
-abstract class EntityAliasTypeBase extends PluginBase implements AliasTypeInterface {
+class EntityAliasTypeBase extends ContextAwarePluginBase implements AliasTypeInterface, AliasTypeBatchUpdateInterface, ContainerFactoryPluginInterface {
 
   /**
    * The module handler service.
@@ -38,12 +44,19 @@ abstract class EntityAliasTypeBase extends PluginBase implements AliasTypeInterf
   /**
    * The entity manager service.
    *
-   * @var \Drupal\Core\Entity\EntityManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected $entityManager;
+  protected $entityTypeManager;
 
   /**
-   * Constructs a NodeAliasType instance.
+   * The path prefix for this entity type.
+   *
+   * @var string
+   */
+  protected $prefix;
+
+  /**
+   * Constructs a EntityAliasTypeBase instance.
    *
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
@@ -55,15 +68,14 @@ abstract class EntityAliasTypeBase extends PluginBase implements AliasTypeInterf
    *   The module handler service.
    * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
    *   The language manager service.
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity manager service.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, ModuleHandlerInterface $module_handler, LanguageManagerInterface $language_manager, EntityManagerInterface $entity_manager) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, ModuleHandlerInterface $module_handler, LanguageManagerInterface $language_manager, EntityTypeManagerInterface $entity_type_manager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->moduleHandler = $module_handler;
     $this->languageManager = $language_manager;
-    $this->entityManager = $entity_manager;
-    $this->setConfiguration($configuration);
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
@@ -76,32 +88,8 @@ abstract class EntityAliasTypeBase extends PluginBase implements AliasTypeInterf
       $plugin_definition,
       $container->get('module_handler'),
       $container->get('language_manager'),
-      $container->get('entity.manager')
+      $container->get('entity_type.manager')
     );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getConfiguration() {
-    return $this->configuration;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setConfiguration(array $configuration) {
-    $this->configuration = NestedArray::mergeDeep(
-      $this->defaultConfiguration(),
-      $configuration
-    );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function defaultConfiguration() {
-    return array();
   }
 
   /**
@@ -125,91 +113,13 @@ abstract class EntityAliasTypeBase extends PluginBase implements AliasTypeInterf
   /**
    * {@inheritdoc}
    */
-  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
-    $form = array(
-      '#type' => 'details',
-      '#title' => $this->getLabel(),
-      '#open' => TRUE,
-      '#tree' => TRUE,
-    );
-
-    // Prompt for the default pattern for this module.
-    $key = 'default';
-
-    $form[$key] = array(
-      '#type' => 'textfield',
-      '#title' => $this->getPatternDescription(),
-      '#default_value' => $this->configuration['default'],
-      '#size' => 65,
-      '#maxlength' => 1280,
-      '#element_validate' => array('token_element_validate'),
-      '#after_build' => array('token_element_validate'),
-      '#token_types' => $this->getTokenTypes(),
-      '#min_tokens' => 1,
-    );
-
-    // If the module supports a set of specialized patterns, set
-    // them up here.
-    $patterns = $this->getPatterns();
-    foreach ($patterns as $itemname => $itemlabel) {
-      $key = 'default';
-      $form['bundles'][$itemname][$key] = array(
-        '#type' => 'textfield',
-        '#title' => $itemlabel,
-        '#default_value' => isset($this->configuration['bundles'][$itemname][$key]) ? $this->configuration['bundles'][$itemname][$key] : NULL,
-        '#size' => 65,
-        '#maxlength' => 1280,
-        '#element_validate' => array('token_element_validate'),
-        '#after_build' => array('token_element_validate'),
-        '#token_types' => $this->getTokenTypes(),
-        '#min_tokens' => 1,
-      );
-    }
-
-    // Show the token help relevant to this pattern type.
-    $form['token_help'] = array(
-      '#theme' => 'token_tree',
-      '#token_types' => $this->getTokenTypes(),
-      '#dialog' => TRUE,
-    );
-    return $form;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getPatterns() {
-    $patterns = [];
-    $languages = $this->languageManager->getLanguages();
-    if ($this->entityManager->getDefinition($this->getEntityTypeId())->hasKey('bundle')) {
-      foreach ($this->getBundles() as $bundle => $bundle_label) {
-        if (count($languages) && $this->isContentTranslationEnabled($bundle)) {
-          $patterns[$bundle] = $this->t('Default path pattern for @bundle (applies to all @bundle fields with blank patterns below)', array('@bundle' => $bundle_label));
-          foreach ($languages as $language) {
-            $patterns[$bundle . '_' . $language->getId()] = $this->t('Pattern for all @language @bundle paths', array(
-              '@bundle' => $bundle_label,
-              '@language' => $language->getName()
-            ));
-          }
-        }
-        else {
-          $patterns[$bundle] = $this->t('Pattern for all @bundle paths', array('@bundle' => $bundle_label));
-        }
-      }
-    }
-    return $patterns;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function batchUpdate(&$context) {
     if (!isset($context['sandbox']['current'])) {
       $context['sandbox']['count'] = 0;
       $context['sandbox']['current'] = 0;
     }
 
-    $entity_type = $this->entityManager->getDefinition($this->getEntityTypeId());
+    $entity_type = $this->entityTypeManager->getDefinition($this->getEntityTypeId());
     $id_key = $entity_type->getKey('id');
 
     $query = db_select($entity_type->get('base_table'), 'base_table');
@@ -225,7 +135,7 @@ abstract class EntityAliasTypeBase extends PluginBase implements AliasTypeInterf
     if (!isset($context['sandbox']['total'])) {
       $context['sandbox']['total'] = $query->countQuery()->execute()->fetchField();
 
-      // If there are no nodes to update, the stop immediately.
+      // If there are no entities to update, then stop immediately.
       if (!$context['sandbox']['total']) {
         $context['finished'] = 1;
         return;
@@ -252,7 +162,7 @@ abstract class EntityAliasTypeBase extends PluginBase implements AliasTypeInterf
    *   The entity type ID.
    */
   protected function getEntityTypeId() {
-    return $this->getPluginId();
+    return $this->getDerivativeId();
   }
 
   /**
@@ -266,13 +176,17 @@ abstract class EntityAliasTypeBase extends PluginBase implements AliasTypeInterf
   protected function bulkUpdate(array $ids, array $options = array()) {
     $options += array('message' => FALSE);
 
-    $entities = $this->entityManager->getStorage($this->getEntityTypeId())->loadMultiple($ids);
-    foreach ($entities as $node) {
-      \Drupal::service('pathauto.manager')->updateAlias($node, 'bulkupdate', $options);
+    $entities = $this->entityTypeManager->getStorage($this->getEntityTypeId())->loadMultiple($ids);
+    foreach ($entities as $entity) {
+      // Update aliases for the entity's default language and its translations.
+      foreach ($entity->getTranslationLanguages() as $langcode => $language) {
+        $translated_entity = $entity->getTranslation($langcode);
+        \Drupal::service('pathauto.generator')->updateEntityAlias($translated_entity, 'bulkupdate', $options);
+      }
     }
 
     if (!empty($options['message'])) {
-      drupal_set_message(\Drupal::translation()->formatPlural(count($ids), 'Updated URL alias for 1 node.', 'Updated URL aliases for @count nodes.'));
+      drupal_set_message(\Drupal::translation()->formatPlural(count($ids), 'Updated 1 %label URL alias.', 'Updated @count %label URL aliases.'), array('%label' => $this->getLabel()));
     }
   }
 
@@ -280,43 +194,28 @@ abstract class EntityAliasTypeBase extends PluginBase implements AliasTypeInterf
    * {@inheritdoc}
    */
   public function calculateDependencies() {
+    $dependencies = [];
+    $dependencies['module'][] = $this->entityTypeManager->getDefinition($this->getEntityTypeId())->getProvider();
+    return $dependencies;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
+  public function applies($object) {
+    return $object instanceof FieldableEntityInterface && $object->getEntityTypeId() == $this->getEntityTypeId();
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
-  }
-
-  /**
-   * Returns bundles.
-   *
-   * @return string[]
-   *   An array of bundle labels, keyed by bundle.
-   */
-  protected function getBundles() {
-    return array_map(function ($bundle_info) {
-      return $bundle_info['label'];
-    }, $this->entityManager->getBundleInfo($this->getEntityTypeId()));
-  }
-
-  /**
-   * Checks if a bundle is enabled for translation.
-   *
-   * @param string $bundle
-   *   The bundle.
-   *
-   * @return bool
-   *   TRUE if content translation is enabled for the bundle.
-   */
-  protected function isContentTranslationEnabled($bundle) {
-    return $this->moduleHandler->moduleExists('content_translation') && \Drupal::service('content_translation.manager')->isEnabled($this->getEntityTypeId(), $bundle);
+  public function getSourcePrefix() {
+    if (empty($this->prefix)) {
+      $entity_type = $this->entityTypeManager->getDefinition($this->getEntityTypeId());
+      $path = $entity_type->getLinkTemplate('canonical');
+      $this->prefix = substr($path, 0, strpos($path, '{'));
+    }
+    return $this->prefix;
   }
 
 }

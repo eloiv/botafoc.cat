@@ -40,7 +40,8 @@ function hook_coffee_commands() {
       $commands[] = array(
         'value' => $entity->toUrl()->toString(),
         'label' => 'Pub: ' . $entity->label(),
-        // You can also specify commands that if the user enters, this command should show.
+        // You can also specify commands that if the user enters, this command
+        // should show.
         'command' => ':x' . ' ' . $entity->label(),
       );
     }
