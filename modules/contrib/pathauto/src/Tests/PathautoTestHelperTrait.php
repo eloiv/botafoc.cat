@@ -11,12 +11,63 @@ use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Language\Language;
 use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\pathauto\Entity\PathautoPattern;
+use Drupal\pathauto\PathautoPatternInterface;
 use Drupal\taxonomy\VocabularyInterface;
 
 /**
  * Helper test class with some added functions for testing.
  */
 trait PathautoTestHelperTrait {
+
+  /**
+   * Creates a pathauto pattern.
+   *
+   * @param string $entity_type_id
+   *   The entity type.
+   * @param string $pattern
+   *   The path pattern.
+   * @param int $weight
+   *   (optional) The pattern weight.
+   *
+   * @return \Drupal\pathauto\PathautoPatternInterface
+   *   The created pattern.
+   */
+  protected function createPattern($entity_type_id, $pattern, $weight = 10) {
+    $pattern = PathautoPattern::create([
+      'id' => Unicode::strtolower($this->randomMachineName()),
+      'type' => 'canonical_entities:' . $entity_type_id,
+      'pattern' => $pattern,
+      'weight' => $weight,
+    ]);
+    $pattern->save();
+    return $pattern;
+  }
+
+  /**
+   * Add a bundle condition to a pathauto pattern.
+   *
+   * @param \Drupal\pathauto\PathautoPatternInterface $pattern
+   *   The pattern.
+   * @param string $entity_type
+   *   The entity type ID.
+   * @param string $bundle
+   *   The bundle
+   */
+  protected function addBundleCondition(PathautoPatternInterface $pattern, $entity_type, $bundle) {
+    $pattern->addSelectionCondition(
+      [
+        'id' => 'entity_bundle:' . $entity_type,
+        'bundles' => [
+          $bundle => $bundle,
+        ],
+        'negate' => FALSE,
+        'context_mapping' => [
+          $entity_type => $entity_type,
+        ]
+      ]
+    );
+  }
 
   public function assertToken($type, $object, $token, $expected) {
     $bubbleable_metadata = new BubbleableMetadata();
@@ -58,8 +109,12 @@ trait PathautoTestHelperTrait {
     $this->assertEntityAlias($entity, '/' . $entity->urlInfo()->getInternalPath(), $langcode);
   }
 
-  public function assertNoEntityAliasExists(EntityInterface $entity) {
-    $this->assertNoAliasExists(array('source' => '/' . $entity->urlInfo()->getInternalPath()));
+  public function assertNoEntityAliasExists(EntityInterface $entity, $alias = NULL) {
+    $path = array('source' => '/' . $entity->urlInfo()->getInternalPath());
+    if (!empty($alias)) {
+      $path['alias'] = $alias;
+    }
+    $this->assertNoAliasExists($path);
   }
 
   public function assertAlias($source, $expected_alias, $langcode = Language::LANGCODE_NOT_SPECIFIED) {
@@ -70,8 +125,8 @@ trait PathautoTestHelperTrait {
         break;
       }
     }
-    $this->assertIdentical($alias['alias'], $expected_alias, t("Alias for %source with language '@language' was %actual, expected %expected.",
-      array('%source' => $source, '%actual' => $alias['alias'], '%expected' => $expected_alias, '@language' => $langcode)));
+    $this->assertIdentical($alias['alias'], $expected_alias, t("Alias for %source with language '@language' is correct.",
+      array('%source' => $source, '@language' => $langcode)));
   }
 
   public function assertAliasExists($conditions) {
@@ -118,9 +173,15 @@ trait PathautoTestHelperTrait {
   }
 
   public function assertEntityPattern($entity_type, $bundle, $langcode = Language::LANGCODE_NOT_SPECIFIED, $expected) {
-    \Drupal::service('pathauto.manager')->resetCaches();
-    $pattern = \Drupal::service('pathauto.manager')->getPatternByEntity($entity_type, $bundle, $langcode);
-    $this->assertIdentical($expected, $pattern);
+
+    $values = [
+      'langcode' => $langcode,
+      \Drupal::entityTypeManager()->getDefinition($entity_type)->getKey('bundle') => $bundle,
+    ];
+    $entity = \Drupal::entityTypeManager()->getStorage($entity_type)->create($values);
+
+    $pattern = \Drupal::service('pathauto.generator')->getPatternByEntity($entity);
+    $this->assertIdentical($expected, $pattern->getPattern());
   }
 
   public function drupalGetTermByName($name, $reset = FALSE) {

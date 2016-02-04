@@ -40,8 +40,6 @@ function coffee_hook_info() {
 
 /**
  * Implements hook_toolbar().
- *
- * @todo Coffee specific icon.
  */
 function coffee_toolbar() {
   $items['coffee'] = [

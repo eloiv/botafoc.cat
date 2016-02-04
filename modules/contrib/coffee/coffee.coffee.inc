@@ -14,7 +14,7 @@ use Drupal\Core\Url;
 function coffee_coffee_commands() {
   $commands = array();
 
-  // Add in a link for the frontpage.
+  // Add in a link for the front page.
   $commands[] = array(
     'value' => Url::fromRoute('<front>')->toString(),
     'label' => t('Go to front page'),

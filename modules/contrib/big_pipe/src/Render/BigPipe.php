@@ -66,13 +66,13 @@ class BigPipe implements BigPipeInterface {
   /**
    * Constructs a new BigPipe class.
    *
-   * @param \Drupal\Core\Render\RendererInterface
+   * @param \Drupal\Core\Render\RendererInterface $renderer
    *   The renderer.
    * @param \Symfony\Component\HttpFoundation\Session\SessionInterface $session
    *   The session.
-   * @param \Symfony\Component\HttpFoundation\RequestStack
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    *   The request stack.
-   * @param \Symfony\Component\HttpKernel\HttpKernelInterface
+   * @param \Symfony\Component\HttpKernel\HttpKernelInterface $http_kernel
    *   The HTTP kernel.
    * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher
    *   The event dispatcher.

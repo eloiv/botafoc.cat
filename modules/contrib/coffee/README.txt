@@ -57,13 +57,6 @@ This will work for all Drupal admin pages.
 If the Devel module is installed it will also look for items that Devel 
 generates. For example; type 'clear' to get devel/cache/clear as result. 
 
--- UPGRADE PATH -- 
-
-If you had Coffee 1.x installed, make sure to run update.php as it will install
-a cache table for the prefetching the Coffee results. 
-
-If you have implemented the hook hook_coffee_command() make sure to rewrite it 
-to the newly hook_coffee_commands(), see coffee.api.php for an example. 
 
 -- COFFEE COMMANDS --
 
@@ -81,8 +74,9 @@ see coffee.api.php for further documentation.
 -- CONTRIBUTORS --
 
 Maintainer
-- Michael Mol 'michaelmol' <http://drupal.org/user/919186>
+- Michael Mol 'michaelmol' <https://www.drupal.org/u/michaelmol>
 
 Co-maintainer
-- Alli Price 'heylookalive' <http://drupal.org/user/431193>
-- Oliver Köhler 'Nebel54' <http://drupal.org/user/1781874>
+- Marco 'willzyx' <https://www.drupal.org/u/willzyx>
+- Alli Price 'heylookalive' <https://www.drupal.org/u/heylookalive>
+- Oliver Köhler 'Nebel54' <https://www.drupal.org/u/nebel54>
