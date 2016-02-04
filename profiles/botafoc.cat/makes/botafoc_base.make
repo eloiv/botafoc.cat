@@ -27,11 +27,7 @@ projects[taxonomy_machine_name][subdir] = contrib
 
 ; Paths
 projects[pathauto][subdir] = contrib
-;projects[pathauto][download][type] = "git"
-;projects[pathauto][download][url] = "http://git.drupal.org/project/pathauto.git"
-;projects[pathauto][download][branch] = "8.x-1.x"
-;projects[pathauto][download][revision] = "0ceda1f"
-;projects[pathauto][patch][] = "https://www.drupal.org/files/issues/pathauto-d8_port-2168193-56.patch"
+projects[ctools][subdir] = contrib
 
 ; SEO
 projects[hreflang][subdir] = contrib
