@@ -98,7 +98,7 @@ class BigPipe implements BigPipeInterface {
     // from all previously rendered/sent chunks.
     // @see http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.41
     $cumulative_assets = AttachedAssets::createFromRenderArray(['#attached' => $attachments]);
-    $cumulative_assets->setAlreadyLoadedLibraries(explode(',', $attachments['drupalSettings']['ajaxPageState']['libraries']));
+    $cumulative_assets->setAlreadyLoadedLibraries($attachments['library']);
 
     // The content in the placeholders may depend on the session, and by the
     // time the response is sent (see index.php), the session is already closed.
@@ -195,18 +195,25 @@ class BigPipe implements BigPipeInterface {
    *   BigPipe placeholders.
    */
   protected function sendNoJsPlaceholders($html, $no_js_placeholders, AttachedAssetsInterface $cumulative_assets) {
-    $fragments = explode('<div data-big-pipe-selector-nojs="', $html);
-    print array_shift($fragments);
-    ob_end_flush();
-    flush();
+    // Split the HTML on every no-JS placeholder string.
+    $prepare_for_preg_split = function ($placeholder_string) {
+      return '(' . preg_quote($placeholder_string, '/') . ')';
+    };
+    $preg_placeholder_strings = array_map($prepare_for_preg_split, array_keys($no_js_placeholders));
+    $fragments = preg_split('/' . implode('|', $preg_placeholder_strings) . '/', $html, NULL, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
 
     foreach ($fragments as $fragment) {
-      $t = explode('"></div>', $fragment, 2);
-      $placeholder = $t[0];
-      if (!isset($no_js_placeholders[$placeholder])) {
+      // If the fragment isn't one of the no-JS placeholders, it is the HTML in
+      // between placeholders and it must be printed & flushed immediately. The
+      // rest of the logic in the loop handles the placeholders.
+      if (!isset($no_js_placeholders[$fragment])) {
+        print $fragment;
+        flush();
         continue;
       }
 
+      $placeholder = $fragment;
+      assert('isset($no_js_placeholders[$placeholder])');
       $token = Crypt::randomBytesBase64(55);
 
       // Render the placeholder, but include the cumulative settings assets, so
@@ -243,7 +250,7 @@ class BigPipe implements BigPipeInterface {
       // - the HTML to load the CSS can be rendered.
       // - the HTML to load the JS (at the top) can be rendered.
       $fake_request = $this->requestStack->getMasterRequest()->duplicate();
-      $fake_request->request->set('ajax_page_state', ['libraries' => implode(',', $cumulative_assets->getAlreadyLoadedLibraries())] + $cumulative_assets->getSettings()['ajaxPageState']);
+      $fake_request->request->set('ajax_page_state', ['libraries' => implode(',', $cumulative_assets->getAlreadyLoadedLibraries())]);
       $this->requestStack->push($fake_request);
       $event = new FilterResponseEvent($this->httpKernel, $fake_request, HttpKernelInterface::SUB_REQUEST, $html_response);
       $this->eventDispatcher->dispatch(KernelEvents::RESPONSE, $event);
@@ -252,16 +259,14 @@ class BigPipe implements BigPipeInterface {
 
       // Send this embedded HTML response.
       print $html_response->getContent();
-      print $t[1];
       flush();
 
       // Another placeholder was rendered and sent, track the set of asset
       // libraries sent so far. Any new settings also need to be tracked, so
       // they can be sent in ::sendPreBody().
       // @todo What if drupalSettings already was printed in the HTML <head>? That case is not yet handled. In that case, no-JS BigPipe would cause broken (incomplete) drupalSettings… This would not matter if it were only used if JS is not enabled, but that's not the only use case. However, this
-      $final_settings = $html_response->getAttachments()['drupalSettings'];
-      $cumulative_assets->setAlreadyLoadedLibraries(explode(',', $final_settings['ajaxPageState']['libraries']));
-      $cumulative_assets->setSettings($final_settings);
+      $cumulative_assets->setAlreadyLoadedLibraries(array_merge($cumulative_assets->getAlreadyLoadedLibraries(), $html_response->getAttachments()['library']));
+      $cumulative_assets->setSettings($html_response->getAttachments()['drupalSettings']);
     }
   }
 
@@ -270,11 +275,11 @@ class BigPipe implements BigPipeInterface {
    *
    * @param array $placeholders
    *   Associative array; the BigPipe placeholders. Keys are the BigPipe
-   *   selectors.
+   *   placeholder IDs.
    * @param array $placeholder_order
    *   Indexed array; the order in which the BigPipe placeholders must be sent.
-   *   Values are the BigPipe selectors. (These values correspond to keys in
-   *   $placeholders.)
+   *   Values are the BigPipe placeholder IDs. (These values correspond to keys
+   *   in $placeholders.)
    * @param \Drupal\Core\Asset\AttachedAssetsInterface $cumulative_assets
    *   The cumulative assets sent so far; to be updated while rendering BigPipe
    *   placeholders.
@@ -285,7 +290,7 @@ class BigPipe implements BigPipeInterface {
       return;
     }
 
-    // Send a container and the start signal.
+    // Send the start signal.
     print "\n";
     print '<script type="application/json" data-big-pipe-event="start"></script>' . "\n";
     flush();
@@ -300,23 +305,23 @@ class BigPipe implements BigPipeInterface {
     $fake_request = $this->requestStack->getMasterRequest()->duplicate();
     $fake_request->headers->set('Accept', 'application/json');
 
-    foreach ($placeholder_order as $placeholder) {
-      if (!isset($placeholders[$placeholder])) {
+    foreach ($placeholder_order as $placeholder_id) {
+      if (!isset($placeholders[$placeholder_id])) {
         continue;
       }
 
       // Render the placeholder.
-      $placeholder_render_array = $placeholders[$placeholder];
-      $elements = $this->renderPlaceholder($placeholder, $placeholder_render_array);
+      $placeholder_render_array = $placeholders[$placeholder_id];
+      $elements = $this->renderPlaceholder($placeholder_id, $placeholder_render_array);
 
       // Create a new AjaxResponse.
       $ajax_response = new AjaxResponse();
       // JavaScript's querySelector automatically decodes HTML entities in
       // attributes, so we must decode the entities of the current BigPipe
-      // placeholder (which has HTML entities encoded since we use it to find
+      // placeholder ID (which has HTML entities encoded since we use it to find
       // the placeholders).
-      $big_pipe_js_selector = Html::decodeEntities($placeholder);
-      $ajax_response->addCommand(new ReplaceCommand(sprintf('[data-big-pipe-selector="%s"]', $big_pipe_js_selector), $elements['#markup']));
+      $big_pipe_js_placeholder_id = Html::decodeEntities($placeholder_id);
+      $ajax_response->addCommand(new ReplaceCommand(sprintf('[data-big-pipe-placeholder-id="%s"]', $big_pipe_js_placeholder_id), $elements['#markup']));
       $ajax_response->setAttachments($elements['#attached']);
 
       // Push a fake request with the asset libraries loaded so far and dispatch
@@ -338,7 +343,7 @@ class BigPipe implements BigPipeInterface {
       // Send this embedded AJAX response.
       $json = $ajax_response->getContent();
       $output = <<<EOF
-    <script type="application/json" data-big-pipe-placeholder="$placeholder" data-drupal-ajax-processor="big_pipe">
+    <script type="application/json" data-big-pipe-replacement-for-placeholder-with-id="$placeholder_id">
     $json
     </script>
 EOF;
@@ -408,10 +413,10 @@ EOF;
    *
    * @return array
    *   Indexed array; the order in which the BigPipe placeholders must be sent.
-   *   Values are the BigPipe selectors.
+   *   Values are the BigPipe placeholder IDs.
    */
   protected function getPlaceholderOrder($html) {
-    $fragments = explode('<div data-big-pipe-selector="', $html);
+    $fragments = explode('<div data-big-pipe-placeholder-id="', $html);
     array_shift($fragments);
     $order = [];
 

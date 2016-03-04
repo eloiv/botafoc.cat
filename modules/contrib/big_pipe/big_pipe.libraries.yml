@@ -3,9 +3,9 @@ big_pipe:
   js:
     js/big_pipe.js: {}
   drupalSettings:
-    bigPipePlaceholders: []
+    bigPipePlaceholderIds: []
   dependencies:
     - core/jquery
-    - core/drupal
+    - core/jquery.once
     - core/drupal.ajax
     - core/drupalSettings

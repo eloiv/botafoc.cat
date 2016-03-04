@@ -8,6 +8,7 @@
 namespace Drupal\big_pipe\Controller;
 
 use Drupal\big_pipe\Render\Placeholder\BigPipeStrategy;
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Routing\LocalRedirectResponse;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
@@ -56,6 +57,7 @@ class BigPipeController {
 
     $response = new LocalRedirectResponse($request->query->get('destination'));
     $response->headers->setCookie(new Cookie(BigPipeStrategy::NOJS_COOKIE, TRUE));
+    $response->addCacheableDependency((new CacheableMetadata())->addCacheContexts(['cookies:' . BigPipeStrategy::NOJS_COOKIE, 'session.exists']));
     return $response;
   }
 

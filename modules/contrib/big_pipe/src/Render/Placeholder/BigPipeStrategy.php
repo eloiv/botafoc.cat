@@ -132,13 +132,13 @@ class BigPipeStrategy implements PlaceholderStrategyInterface {
       // @see \Drupal\Core\Form\FormBuilder::renderFormTokenPlaceholder()
       // @see \Drupal\Core\Form\FormBuilder::renderPlaceholderFormAction()
       if ($placeholder[0] !== '<' || $placeholder !== Html::normalize($placeholder)) {
-        $overridden_placeholders[$placeholder] = static::createBigPipeNoJsPlaceholder($placeholder, $placeholder_elements);
+        $overridden_placeholders[$placeholder] = static::createBigPipeNoJsPlaceholder($placeholder, $placeholder_elements, TRUE);
       }
       else {
         // If the current request/session doesn't have JavaScript, fall back to
         // no-JS BigPipe.
         if ($this->requestStack->getCurrentRequest()->cookies->has(static::NOJS_COOKIE)) {
-          $overridden_placeholders[$placeholder] = static::createBigPipeNoJsPlaceholder($placeholder, $placeholder_elements);
+          $overridden_placeholders[$placeholder] = static::createBigPipeNoJsPlaceholder($placeholder, $placeholder_elements, FALSE);
         }
         else {
           $overridden_placeholders[$placeholder] = static::createBigPipeJsPlaceholder($placeholder, $placeholder_elements);
@@ -162,24 +162,10 @@ class BigPipeStrategy implements PlaceholderStrategyInterface {
    *   The resulting BigPipe JS placeholder render array.
    */
   protected static function createBigPipeJsPlaceholder($original_placeholder, array $placeholder_render_array) {
-    // Generate a BigPipe selector (to be used by BigPipe's JavaScript).
-    // @see \Drupal\Core\Render\PlaceholderGenerator::createPlaceholder()
-    if (isset($placeholder_render_array['#lazy_builder'])) {
-      $callback = $placeholder_render_array['#lazy_builder'][0];
-      $arguments = $placeholder_render_array['#lazy_builder'][1];
-      $token = hash('crc32b', serialize($placeholder_render_array));
-      $big_pipe_js_selector = UrlHelper::buildQuery(['callback' => $callback, 'args' => $arguments, 'token' => $token]);
-    }
-    // When the placeholder's render array is not using a #lazy_builder,
-    // anything could be in there: only #lazy_builder has a strict contract that
-    // allows us to create a more sane selector. Therefore, simply the original
-    // placeholder into a usable selector, at the cost of it being obtuse.
-    else {
-      $big_pipe_js_selector = Html::getId($original_placeholder);
-    }
+    $big_pipe_placeholder_id = static::generateBigPipePlaceholderId($original_placeholder, $placeholder_render_array);
 
     return [
-      '#markup' => '<div data-big-pipe-selector="' . Html::escape($big_pipe_js_selector) . '"></div>',
+      '#markup' => '<div data-big-pipe-placeholder-id="' . Html::escape($big_pipe_placeholder_id) . '"></div>',
       '#cache' => [
         'max-age' => 0,
         'contexts' => [
@@ -190,12 +176,12 @@ class BigPipeStrategy implements PlaceholderStrategyInterface {
         'library' => [
           'big_pipe/big_pipe',
         ],
-        // Inform BigPipe' JavaScript known BigPipe placeholders (a whitelist).
+        // Inform BigPipe' JavaScript known BigPipe placeholder IDs (a whitelist).
         'drupalSettings' => [
-          'bigPipePlaceholders' => [$big_pipe_js_selector => TRUE],
+          'bigPipePlaceholderIds' => [$big_pipe_placeholder_id => TRUE],
         ],
         'big_pipe_placeholders' => [
-          Html::escape($big_pipe_js_selector) => $placeholder_render_array,
+          Html::escape($big_pipe_placeholder_id) => $placeholder_render_array,
         ],
       ],
     ];
@@ -208,17 +194,23 @@ class BigPipeStrategy implements PlaceholderStrategyInterface {
    *   The original placeholder.
    * @param array $placeholder_render_array
    *   The render array for a placeholder.
+   * @param bool $placeholder_must_be_attribute_safe
+   *   Whether the placeholder must be safe for use in a HTML attribute (in case
+   *   it's a placeholder for a HTML attribute value or a subset of it).
    *
    * @return array
    *   The resulting BigPipe no-JS placeholder render array.
-   *
-   * @todo Figure out how to simplify this. Perhaps no new placeholder is in fact necessary?
-   * @todo Related, perhaps distinguish between "HTML" and "non-HTML (attr value)" use cases? Because right now, this *breaks* HTML and therefore breaks response filters: this indiscriminately uses a <div> as a placeholder, which is invalid inside a HTML attribute, and thus breaks DOM parsing.
    */
-  protected static function createBigPipeNoJsPlaceholder($original_placeholder, array $placeholder_render_array) {
-    $html_placeholder = Html::getId($original_placeholder);
+  protected static function createBigPipeNoJsPlaceholder($original_placeholder, array $placeholder_render_array, $placeholder_must_be_attribute_safe = FALSE) {
+    if (!$placeholder_must_be_attribute_safe) {
+      $big_pipe_placeholder = '<div data-big-pipe-nojs-placeholder-id="' . Html::escape(static::generateBigPipePlaceholderId($original_placeholder, $placeholder_render_array))  . '"></div>';
+    }
+    else {
+      $big_pipe_placeholder = 'big_pipe_nojs_placeholder_attribute_safe:' . Html::escape($original_placeholder);
+    }
+
     return [
-      '#markup' => '<div data-big-pipe-selector-nojs="' . $html_placeholder . '"></div>',
+      '#markup' => $big_pipe_placeholder,
       '#cache' => [
         'max-age' => 0,
         'contexts' => [
@@ -227,10 +219,39 @@ class BigPipeStrategy implements PlaceholderStrategyInterface {
       ],
       '#attached' => [
         'big_pipe_nojs_placeholders' => [
-          $html_placeholder => $placeholder_render_array,
+          $big_pipe_placeholder => $placeholder_render_array,
         ],
       ],
     ];
+  }
+
+  /**
+   * Generates a BigPipe placeholder ID.
+   *
+   * @param string $original_placeholder
+   *   The original placeholder.
+   * @param array $placeholder_render_array
+   *   The render array for a placeholder.
+   *
+   * @return string
+   *   The generated BigPipe placeholder ID.
+   */
+  protected static function generateBigPipePlaceholderId($original_placeholder, array $placeholder_render_array) {
+    // Generate a BigPipe placeholder ID (to be used by BigPipe's JavaScript).
+    // @see \Drupal\Core\Render\PlaceholderGenerator::createPlaceholder()
+    if (isset($placeholder_render_array['#lazy_builder'])) {
+      $callback = $placeholder_render_array['#lazy_builder'][0];
+      $arguments = $placeholder_render_array['#lazy_builder'][1];
+      $token = hash('crc32b', serialize($placeholder_render_array));
+      return UrlHelper::buildQuery(['callback' => $callback, 'args' => $arguments, 'token' => $token]);
+    }
+    // When the placeholder's render array is not using a #lazy_builder,
+    // anything could be in there: only #lazy_builder has a strict contract that
+    // allows us to create a more sane selector. Therefore, simply the original
+    // placeholder into a usable placeholder ID, at the cost of it being obtuse.
+    else {
+      return Html::getId($original_placeholder);
+    }
   }
 
 }

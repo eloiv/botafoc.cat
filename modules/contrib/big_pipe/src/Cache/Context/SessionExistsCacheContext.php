@@ -13,9 +13,9 @@ use Drupal\Core\Session\SessionConfigurationInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
- * Defines the SessionCacheContext service, for "per session" caching.
+ * Defines the SessionExistsCacheContext service, for "session or not" caching.
  *
- * Cache context ID: 'session'.
+ * Cache context ID: 'session.exists'.
  */
 class SessionExistsCacheContext implements CacheContextInterface {
 

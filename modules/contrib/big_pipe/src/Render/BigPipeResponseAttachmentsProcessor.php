@@ -13,7 +13,6 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\EnforcedResponseException;
 use Drupal\Core\Render\AttachmentsInterface;
 use Drupal\Core\Render\AttachmentsResponseProcessorInterface;
-use Drupal\Core\Render\HtmlResponse;
 use Drupal\Core\Render\HtmlResponseAttachmentsProcessor;
 use Drupal\Core\Render\RendererInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -62,10 +61,7 @@ class BigPipeResponseAttachmentsProcessor extends HtmlResponseAttachmentsProcess
    * {@inheritdoc}
    */
   public function processAttachments(AttachmentsInterface $response) {
-    // @todo Convert to assertion once https://www.drupal.org/node/2408013 lands
-    if (!$response instanceof HtmlResponse) {
-      throw new \InvalidArgumentException('\Drupal\Core\Render\HtmlResponse instance expected.');
-    }
+    assert('$response instanceof \Drupal\Core\Render\HtmlResponse');
 
     // First, render the actual placeholders; this will cause the BigPipe
     // placeholder strategy to generate BigPipe placeholders. We need those to
@@ -94,22 +90,24 @@ class BigPipeResponseAttachmentsProcessor extends HtmlResponseAttachmentsProcess
       $big_pipe_nojs_placeholders = $attachments['big_pipe_nojs_placeholders'];
       unset($attachments['big_pipe_nojs_placeholders']);
     }
-    $response->setAttachments($attachments);
+    $html_response = clone $response;
+    $html_response->setAttachments($attachments);
 
     // Call HtmlResponseAttachmentsProcessor to process all other attachments.
-    $this->htmlResponseAttachmentsProcessor->processAttachments($response);
+    $processed_html_response = $this->htmlResponseAttachmentsProcessor->processAttachments($html_response);
 
     // Restore BigPipe placeholders.
-    $attachments = $response->getAttachments();
+    $attachments = $processed_html_response->getAttachments();
+    $big_pipe_response = clone $processed_html_response;
     if (count($big_pipe_placeholders)) {
       $attachments['big_pipe_placeholders'] = $big_pipe_placeholders;
     }
     if (count($big_pipe_nojs_placeholders)) {
       $attachments['big_pipe_nojs_placeholders'] = $big_pipe_nojs_placeholders;
     }
-    $response->setAttachments($attachments);
+    $big_pipe_response->setAttachments($attachments);
 
-    return $response;
+    return $big_pipe_response;
   }
 
 }

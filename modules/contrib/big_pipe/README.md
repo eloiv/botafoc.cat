@@ -53,10 +53,16 @@ When using Apache, there is nothing to do: no buffering by default.
 
 When using FastCGI, you must disable its buffering.
 
-- When using Apache+FastCGI, [set `FcgidOutputBufferSize` to `0`](https://httpd.apache.org/mod_fcgid/mod/mod_fcgid.html#fcgidoutputbuffersize):
+- When using Apache+`mod_fcgid`, [set `FcgidOutputBufferSize` to `0`](https://httpd.apache.org/mod_fcgid/mod/mod_fcgid.html#fcgidoutputbuffersize):
 ```
 <IfModule mod_fcgid.c>
   FcgidOutputBufferSize 0
+</IfModule>
+```
+- When using Apache+`mod_fastcgi`, [add the `-flush` option to the `FastCGIExternalServer` directive](http://www.fastcgi.com/mod_fastcgi/docs/mod_fastcgi.html#FastCgiServer):
+```
+<IfModule mod_fastcgi.c>
+  FastCGIExternalServer /usr/sbin/php5-fpm -flush -socket /var/run/php5-fpm.sock
 </IfModule>
 ```
 - When using Nginx+FastCGI, [set `fastcgi_buffering` to `off`](http://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_buffering).
