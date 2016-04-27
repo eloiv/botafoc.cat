@@ -42,8 +42,11 @@ dependencies:
   # Administration
   - admin_toolbar
   - admin_toolbar_tools
+  - adminimal_admin_toolbar
   - coffee
-  # - mpac
+  - fpa
+  - libraries
+  - entity_clone
 
   # Fields
   - field_group
@@ -51,10 +54,14 @@ dependencies:
   - fff
   - fences
   - image_formatter_link_to_image_style
+  - markup
+  - filefield_paths
+  - rdfui
 
   # Text formats and Editors
   - editor_file
   - editor_advanced_link
+  - linkit
 
   # Taxonomies
   - taxonomy_access_fix
@@ -74,9 +81,16 @@ dependencies:
   - token
 
   # Performance
-  - big_pipe
+  # included in 8.2.x core
+  # - big_pipe
+
+  # Backups
+  - backup_migrate
+
+  #Botafoc.cat
+  - bfc_core
 
 themes:
   - bartik
-  - seven
+  - adminimal_theme
   - bfc_admin_theme

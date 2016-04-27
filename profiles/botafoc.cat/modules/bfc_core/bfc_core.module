@@ -1,0 +1,5 @@
+<?php
+
+function bfc_core_page_attachments(&$page) {
+  $page['#attached']['library'][] = 'bfc_core/bfc_core';
+}

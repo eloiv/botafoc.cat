@@ -41,7 +41,6 @@ function botafoc_install_tasks_alter(&$tasks, $install_state) {
   $tasks['install_select_language'] = array(
     'display' => 0,
   );
-
 }
 
 function install_select_languages(&$install_state) {
@@ -103,5 +102,16 @@ function install_initial_configuration(&$install_state) {
         ConfigurableLanguage::createFromLangcode($key)->save();
       }
     }
+  }
+}
+
+function botafoc_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'install_configure_form') {
+    $form['site_information']['#type'] = 'details';
+    $form['site_information']['#open'] = TRUE;
+    $form['admin_account']['#type'] = 'details';
+    $form['admin_account']['#open'] = TRUE;
+    $form['regional_settings']['#type'] = 'details';
+    $form['update_notifications']['#type'] = 'details';
   }
 }

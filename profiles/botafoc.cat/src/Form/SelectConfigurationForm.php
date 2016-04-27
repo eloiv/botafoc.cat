@@ -81,6 +81,7 @@ class SelectConfigurationForm extends FormBase {
     $this->_move_all_config_files_directory('bartik');
     $this->_move_all_config_files_directory('text_formats_editors');
     $this->_move_all_config_files_directory('user');
+    $this->_move_all_config_files_directory('linkit');
 
     if(!empty($_GET['langcodes'])){
       $this->_move_all_config_files_directory('multilanguage');

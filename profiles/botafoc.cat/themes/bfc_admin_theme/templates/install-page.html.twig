@@ -12,15 +12,20 @@
 <div class="layout-container">
 
   <header role="banner">
-    <img src="{{base_path}}{{directory}}/images/botafoc.png" />
-    {% if site_name %}
-      <h1 class="page-title">
-        {{ site_name }}
-      </h1>
-      {% if site_version %}
-        <span class="site-version"> Drupal core: {{ site_version }}</span>
+    <div class="header-wrapper">
+      <img src="{{base_path}}{{directory}}/images/botafoc.png" />
+      {% if site_name %}
+        <div class="header-info">
+          <h1 class="page-title">
+            {{ site_name }}
+          </h1>
+          {% if site_version %}
+            <span class="botafoc-version">Version: 16.04</span>
+            <span class="site-version"> Drupal core: {{ site_version }}</span>
+          {% endif %}
+        </div>
       {% endif %}
-    {% endif %}
+    </div>
   </header>
 
   {% if page.sidebar_first %}

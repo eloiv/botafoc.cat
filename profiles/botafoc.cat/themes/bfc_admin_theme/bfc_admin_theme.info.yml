@@ -3,7 +3,7 @@ type: theme
 description: 'Botafoc Admin subtheme of Seven'
 version: VERSION
 core: 8.x
-base theme: seven
+base theme: adminimal_theme
 libraries:
  - bfc_admin_theme/bfc-styling
 regions:

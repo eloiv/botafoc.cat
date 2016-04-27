@@ -1,0 +1,29 @@
+status: true
+dependencies:
+  module:
+    - node
+id: basic
+label: basic
+description: 'linkit basic profile'
+attributes:
+  target:
+    id: target
+    weight: 0
+    settings:
+      widget_type: simple_checkbox
+  title:
+    id: title
+    weight: 0
+    settings:
+      automatic_title: true
+matchers:
+  d0df1216-cc84-4d1a-962c-6995290eb0f2:
+    uuid: d0df1216-cc84-4d1a-962c-6995290eb0f2
+    id: 'entity:node'
+    weight: 0
+    settings:
+      result_description: Content
+      bundles: {  }
+      group_by_bundle: false
+      include_unpublished: false
+

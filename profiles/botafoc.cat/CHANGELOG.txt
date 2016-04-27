@@ -1,3 +1,17 @@
+Botafoc.cat 8.1-2.x, 2016-04-27
+-------------------------------
+ - Core: last release stable 8.1
+ - Adminimal: Adminimal is the most popular contribute Administration Theme for Drupal
+ - Adminimal Admin Toolbar: Although the "Adminimal" theme provides menu styling, there are some conflicts with Admin toolbar.
+ - Backup and Migrate: Back up and restore your Drupal MySQL database, code, and files or migrate a site between environments.
+ - Linkit: Linkit provides an easy interface for internal and external linking with wysiwyg editors by using an autocomplete field.
+ - File (Field) Paths: extends the default functionality of Drupal's core File module, Image module and many other File upload modules, by adding the ability to use entity based tokens in destination paths and file names.
+ - RDF UI: Allow site builders to integrate schema.org seamlessly during or after the site building process on Drupal 8. 
+ - Markup: Adds the ability for site admins to add "Markup" widgets to the form. 
+ - Entity clone: Allows to clone many of the entities (config & content) provided by the Drupal core.
+ - Fast Permissions Administration: Better permissions interface on page of permissions. 
+ - Install page: Added new styles on install page
+
 Botafoc.cat 8.x-1.2, 2015-12-19
 -------------------------------
 - Text formats and Editors: Full HTML (no editor) because Full HTML ckeditor botton Source remove the ident format.
