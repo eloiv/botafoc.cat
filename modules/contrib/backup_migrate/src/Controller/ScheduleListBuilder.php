@@ -35,13 +35,18 @@ class ScheduleListBuilder extends ConfigEntityListBuilder {
     $row['label'] = $entity->label();
     $row['enabled'] = $entity->get('enabled') ? $this->t('Yes') : $this->t('No');
     $row['period'] = $entity->getPeriodFormatted();
+
     $row['last_run'] = $this->t('Never');
     if ($last_run = $entity->getLastRun()) {
       $row['last_run'] = \Drupal::service('date.formatter')->format($last_run, 'small');
       $row['last_run'] .= ' (' . $this->t('@time ago', array('@time' => \Drupal::service('date.formatter')->formatInterval(REQUEST_TIME - $last_run))) . ')';
     }
+
     $row['next_run'] = $this->t('Not Scheduled');
-    if ($next_run = $entity->getNextRun()) {
+    if (!$entity->get('enabled')) {
+      $row['next_run'] = $this->t('Disabled');
+    }
+    else if ($next_run = $entity->getNextRun()) {
       $interval = \Drupal::service('date.formatter')->formatInterval(abs($next_run - REQUEST_TIME));
       if ($next_run > REQUEST_TIME) {
         $row['next_run'] = \Drupal::service('date.formatter')->format($next_run, 'small');
@@ -54,33 +59,10 @@ class ScheduleListBuilder extends ConfigEntityListBuilder {
         }
       }
     }
+
     $row['keep'] = \Drupal::translation()->formatPlural($entity->get('keep'), 'Last 1 backup', 'Last @count backups');
 
-
     return $row + parent::buildRow($entity);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getDefaultOperations(EntityInterface $entity) {
-    $operations = parent::getDefaultOperations($entity);
-
-    if ($entity->hasLinkTemplate('edit-form')) {
-      $operations['edit'] = array(
-        'title' => t('Edit schedule'),
-        'weight' => 20,
-        'url' => $entity->urlInfo('edit-form'),
-      );
-    }
-    if ($entity->hasLinkTemplate('delete-form')) {
-      $operations['delete'] = array(
-        'title' => t('Delete schedule'),
-        'weight' => 30,
-        'url' => $entity->urlInfo('delete-form'),
-      );
-    }
-    return $operations;
   }
 
   /**

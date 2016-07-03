@@ -1,0 +1,27 @@
+{
+  "name": "drupal/adminimal_admin_toolbar",
+  "description": "Adminimal styling brought to admin toolbar.",
+  "type": "drupal-module",
+  "homepage": "https://www.drupal.org/sandbox/energee/2690521",
+  "authors": [{
+    "name": "Ted Slesinski",
+    "homepage": "https://www.drupal.org/u/energee"
+  }],
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/2690521"
+  },
+  "license": "GPL-2.0+",
+  "repositories": [{
+    "type": "package",
+    "package": {
+      "name": "drupal/adminimal_admin_toolbar",
+      "version": "8.0.0",
+      "type": "drupal-module",
+      "source": {
+        "url": "https://git.drupal.org/sandbox/energee/2690521.git",
+        "type": "git",
+        "reference": "refs/heads/8.x-1.x"
+      }
+    }
+  }]
+}

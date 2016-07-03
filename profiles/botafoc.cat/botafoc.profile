@@ -35,6 +35,13 @@ function botafoc_install_tasks_alter(&$tasks, $install_state) {
         'display_name' => t('Install configuration'),
       );
     }
+
+    // Is required to install_configuration executed after install_import_translations.
+    if ($key == 'install_finished') {
+      $tasks['install_last_configuration'] = array(
+        'display_name' => t('Last configuration'),
+      );
+    }
   }
 
   // Disable tasks
@@ -102,6 +109,15 @@ function install_initial_configuration(&$install_state) {
         ConfigurableLanguage::createFromLangcode($key)->save();
       }
     }
+  }
+}
+
+function install_last_configuration(&$install_state) {
+  if(!empty($_GET['langcode'])) {
+    $user = \Drupal\user\Entity\User::load(1);
+    $user->set("preferred_langcode", $_GET['langcode']);
+    $user->set("preferred_admin_langcode", $_GET['langcode']);
+    $user->save();
   }
 }
 

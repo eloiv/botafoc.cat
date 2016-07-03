@@ -7,10 +7,10 @@ projects[adminimal_theme][subdir] = contrib
 
 ; Administration
 projects[admin_toolbar][subdir] = contrib
-projects[adminimal_admin_toolbar][subdir] = sandbox
-projects[adminimal_admin_toolbar][download][type] = "git"
-projects[adminimal_admin_toolbar][download][url] = "http://git.drupal.org/sandbox/energee/2690521.git"
-projects[adminimal_admin_toolbar][download][branch] = "8.x-1.x"
+projects[adminimal_admin_toolbar][subdir] = contrib
+projects[block_visibility_groups][subdir] = contrib
+projects[fbl][subdir] = contrib
+projects[anonymous_login][subdir] = contrib
 
 projects[menu_link_attributes][subdir] = contrib
 projects[fpa][subdir] = contrib
@@ -25,6 +25,10 @@ projects[fff][subdir] = contrib
 projects[fences][subdir] = contrib
 projects[image_formatter_link_to_image_style][subdir] = contrib
 projects[image_styles_mapping][subdir] = contrib
+projects[focal_point][subdir] = contrib
+projects[crop][subdir] = contrib
+projects[smart_trim][subdir] = contrib
+
 projects[markup][subdir] = contrib
 projects[filefield_paths][subdir] = contrib
 projects[rdfui][subdir] = contrib

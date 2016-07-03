@@ -1,19 +1,14 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\image_styles_mapping\Service\ImageStylesMappingService.
- */
-
 namespace Drupal\image_styles_mapping\Service;
 
-use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\Core\Extension\ModuleHandlerInterface;
-use Drupal\Core\Routing\LinkGeneratorTrait;
 use Drupal\field_ui\FieldUI;
 use Drupal\image_styles_mapping\Plugin\ImageStylesMappingPluginManager;
+use Drupal\Core\Link;
 
 /**
  * Class ImageStylesMappingService.
@@ -21,7 +16,6 @@ use Drupal\image_styles_mapping\Plugin\ImageStylesMappingPluginManager;
  * @package Drupal\image_styles_mapping\Service
  */
 class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
-  use LinkGeneratorTrait;
   use StringTranslationTrait;
 
   /**
@@ -43,22 +37,22 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
    *
    * @var \Drupal\Core\Entity\EntityTypeManager
    */
-  protected $entity_type_manager;
+  protected $entityTypeManager;
 
   /**
    * Constructs an ImageStylesMappingService object.
    *
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   The module handler.
-   * @param \Drupal\image_styles_mapping\Plugin\ImageStylesMappingPluginManager $imageStylesMappingPluginManager
+   * @param \Drupal\image_styles_mapping\Plugin\ImageStylesMappingPluginManager $image_styles_mapping_plugin_manager
    *   The image styles mapping plugin manager.
-   * @param \Drupal\Core\Entity\EntityTypeManager $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    */
-  public function __construct(ModuleHandlerInterface $module_handler, ImageStylesMappingPluginManager $imageStylesMappingPluginManager, EntityTypeManager $entity_type_manager) {
+  public function __construct(ModuleHandlerInterface $module_handler, ImageStylesMappingPluginManager $image_styles_mapping_plugin_manager, EntityTypeManagerInterface $entity_type_manager) {
     $this->moduleHandler = $module_handler;
-    $this->imageStylesMappingPluginManager = $imageStylesMappingPluginManager;
-    $this->entity_type_manager = $entity_type_manager;
+    $this->imageStylesMappingPluginManager = $image_styles_mapping_plugin_manager;
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
@@ -69,10 +63,10 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
     $active_image_styles_mapping_plugins = $this->getActiveImageStylesMappingPlugins();
 
     $header = array(
-      array('data' => $this->t('Entity'),    'field' => 'entity_type'),
-      array('data' => $this->t('Bundle'),    'field' => 'bundle'),
+      array('data' => $this->t('Entity'), 'field' => 'entity_type'),
+      array('data' => $this->t('Bundle'), 'field' => 'bundle'),
       array('data' => $this->t('View mode'), 'field' => 'view_mode'),
-      array('data' => $this->t('Field'),     'field' => 'field'),
+      array('data' => $this->t('Field'), 'field' => 'field'),
     );
 
     // Add the plugins header.
@@ -80,7 +74,8 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
       $header[] = $plugin->getHeader();
     }
 
-    $entity_view_display_entities = $this->entity_type_manager->getStorage('entity_view_display')->loadMultiple();
+    /** @var \Drupal\Core\Entity\Entity\EntityViewDisplay[] $entity_view_display_entities */
+    $entity_view_display_entities = $this->entityTypeManager->getStorage('entity_view_display')->loadMultiple();
 
     $rows = array();
     foreach ($entity_view_display_entities as $entity_view_display_entity) {
@@ -119,12 +114,13 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
     $active_image_styles_mapping_plugins = $this->getActiveImageStylesMappingPlugins();
 
     // Get the views.
-    $views = $this->entity_type_manager->getStorage('view')->loadMultiple();
+    /** @var \Drupal\views\Entity\View[] $views */
+    $views = $this->entityTypeManager->getStorage('view')->loadMultiple();
 
     $header = array(
-      array('data' => $this->t('View'),         'field' => 'view'),
+      array('data' => $this->t('View'), 'field' => 'view'),
       array('data' => $this->t('View display'), 'field' => 'view_display'),
-      array('data' => $this->t('Field'),        'field' => 'field'),
+      array('data' => $this->t('Field'), 'field' => 'field'),
     );
 
     // Add the plugins header.
@@ -173,7 +169,8 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
     $image_fields = &drupal_static(__FUNCTION__);
 
     if (!isset($image_fields)) {
-      $field_instance_config_entities = $this->entity_type_manager->getStorage('field_config')->loadMultiple();
+      /** @var \Drupal\field\Entity\FieldConfig[] $field_instance_config_entities */
+      $field_instance_config_entities = $this->entityTypeManager->getStorage('field_config')->loadMultiple();
 
       $image_fields = array();
       foreach ($field_instance_config_entities as $field_instance_config_entity) {
@@ -243,7 +240,7 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
     $display = $view_mode;
 
     // Get entity type object from entity type name.
-    $entity_type_object = $this->entity_type_manager->getDefinition($entity_type);
+    $entity_type_object = $this->entityTypeManager->getDefinition($entity_type);
 
     // Prepare URL parameters.
     $parameters = array(
@@ -261,7 +258,7 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
 
     $url = Url::fromRoute($route, $parameters);
     if ($url->renderAccess($url->toRenderArray())) {
-      $display = $this->l($view_mode, $url);
+      $display = Link::fromTextAndUrl($view_mode, $url);
     }
 
     return $display;
@@ -295,7 +292,7 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
 
       // Use the routing system to check access.
       if ($url->renderAccess($url->toRenderArray())) {
-        return $this->l($display_title, $url);
+        return Link::fromTextAndUrl($display_title, $url);
       }
       else {
         return $display_title;

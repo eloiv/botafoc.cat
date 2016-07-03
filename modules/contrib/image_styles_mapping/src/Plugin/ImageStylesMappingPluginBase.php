@@ -2,27 +2,44 @@
 
 namespace Drupal\image_styles_mapping\Plugin;
 
+use Drupal\Component\Render\FormattableMarkup;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\PluginBase;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Base class for plugins able to add columns on image styles mapping reports.
  *
  * @ingroup plugin_api
  */
-abstract class ImageStylesMappingPluginBase extends PluginBase implements ImageStylesMappingPluginInterface {
+abstract class ImageStylesMappingPluginBase extends PluginBase implements ImageStylesMappingPluginInterface, ContainerFactoryPluginInterface {
+
+  /**
+   * Entity type manager service.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
 
   /**
    * {@inheritdoc}
    */
-  function __construct(array $configuration, $plugin_id, $plugin_definition) {
+  public function __construct(array $configuration, $plugin_id, array $plugin_definition, EntityTypeManagerInterface $entity_type_manager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->entityTypeManager = $entity_type_manager;
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function create(array $configuration, $plugin_id, $plugin_definition) {
-    return new static($configuration, $plugin_id, $plugin_definition);
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('entity_type.manager')
+    );
   }
 
   /**
@@ -43,25 +60,7 @@ abstract class ImageStylesMappingPluginBase extends PluginBase implements ImageS
    * {@inheritdoc}
    */
   public function getRowData(array $field_settings) {
-    $image_styles = array();
-
-    foreach ($this->getImageStyles() as $image_style_name => $image_style_label) {
-      // Use recursive search because the structure of the
-      // field_formatter is unknown.
-      $search_result = FALSE;
-      $this->recursiveSearch($image_style_name, $field_settings, $search_result);
-      if ($search_result) {
-        $image_styles[] = $this->displayImageStyleLink($image_style_label, $image_style_name);
-      }
-    }
-
-    // Case empty.
-    if (empty($image_styles)) {
-      $image_styles[] = $this->t('No image style used');
-    }
-
-    $image_styles = implode(', ', $image_styles);
-    return $image_styles;
+    return new FormattableMarkup('', array());
   }
 
   /**
@@ -80,15 +79,15 @@ abstract class ImageStylesMappingPluginBase extends PluginBase implements ImageS
    *   The value searched.
    * @param array $haystack
    *   The array in which the value is searched.
-   * @param bool @result
+   * @param bool $result
    *   If the needle has been found.
    *
    * @return bool
-   *   TRUE if the value is found.
+   *   TRUE if the value is found. FALSE otherwise.
    */
-  public function recursiveSearch($needle, $haystack, &$result) {
+  public function recursiveSearch($needle, array $haystack, &$result) {
     if (!is_array($haystack)) {
-      return;
+      return FALSE;
     }
 
     foreach ($haystack as $value) {

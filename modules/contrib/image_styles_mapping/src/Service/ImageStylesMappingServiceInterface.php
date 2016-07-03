@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\image_styles_mapping\Service\ImageStylesMappingServiceInterface.
- */
-
 namespace Drupal\image_styles_mapping\Service;
 
 /**

@@ -1,13 +1,13 @@
-name: Image Styles Mapping
+name: 'Image Styles Mapping'
 type: module
-description: Image Styles Mapping
+description: 'Image Styles Mapping'
 # core: 8.x
-package: Administration
+package: 'Administration'
 dependencies:
-  - image
+  - drupal:image
 
-# Information added by Drupal.org packaging script on 2015-11-21
-version: '8.x-1.0'
+# Information added by Drupal.org packaging script on 2016-06-04
+version: '8.x-1.1'
 core: '8.x'
 project: 'image_styles_mapping'
-datestamp: 1448120942
+datestamp: 1465055940

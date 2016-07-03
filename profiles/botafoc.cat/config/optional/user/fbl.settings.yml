@@ -1,0 +1,7 @@
+field_based_login:
+  field: ''
+  allow_user_name: 1
+  allow_user_email: 1
+  label: 'Email or Username'
+  field_desc: 'Enter your drupal Email or Username.'
+actions: null

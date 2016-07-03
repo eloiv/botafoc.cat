@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Tests for ImageStylesMappingService.
- */
-
 namespace Drupal\image_styles_mapping\Tests;
 
 use Drupal\simpletest\WebTestBase;
@@ -28,10 +23,10 @@ class ImageStylesMappingServiceTest extends WebTestBase {
    */
   public function testActivePlugins() {
     // Get image styles mapping plugin manager.
-    $imageStylesMappingPluginManager = \Drupal::service('plugin.manager.image_styles_mapping.image_styles_mapping');
+    $image_styles_mapping_plugin_manager = \Drupal::service('plugin.manager.image_styles_mapping.image_styles_mapping');
 
     // Get active image styles mapping plugins.
-    $active_plugins = $imageStylesMappingPluginManager->getDefinitions();
+    $active_plugins = $image_styles_mapping_plugin_manager->getDefinitions();
     $active_plugin_ids = array_keys($active_plugins);
 
     // Expected image styles.

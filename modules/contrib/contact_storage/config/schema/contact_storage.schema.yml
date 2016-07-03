@@ -6,7 +6,7 @@ contact.form.*.third_party.contact_storage:
       type: string
       label: 'Redirect URI'
     submit_text:
-      type: string
+      type: label
       label: 'Submit Text'
     show_preview:
       type: boolean

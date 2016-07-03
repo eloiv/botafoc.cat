@@ -7,6 +7,7 @@
 
 namespace Drupal\backup_migrate\Entity;
 
+use BackupMigrate\Core\Config\Config;
 use BackupMigrate\Core\Exception\BackupMigrateException;
 use BackupMigrate\Core\Main\BackupMigrateInterface;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
@@ -18,6 +19,7 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  *   id = "backup_migrate_schedule",
  *   label = @Translation("Schedule"),
  *   module = "backup_migrate",
+ *   admin_permission = "administer backup and migrate",
  *   entity_keys = {
  *     "id" = "id",
  *     "label" = "label",
@@ -27,7 +29,7 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  *     "list_builder" = "Drupal\backup_migrate\Controller\ScheduleListBuilder",
  *     "form" = {
  *       "default" = "Drupal\backup_migrate\Form\ScheduleForm",
- *       "delete" = "Drupal\backup_migrate\Form\ScheduleDeleteForm"
+ *       "delete" = "Drupal\backup_migrate\Form\EntityDeleteForm"
  *     },
  *   },
  *   links = {
@@ -60,25 +62,38 @@ class Schedule extends ConfigEntityBase {
    *  Run the schedule even if it is not due to be run.
    */
   public function run(BackupMigrateInterface $bam, $force = FALSE) {
-
     $next_run_at = $this->getNextRun();
     $should_run_now = (REQUEST_TIME >= $next_run_at);
-    if ($force || $should_run_now) {
+    $enabled = $this->get('enabled');
+    if ($force || ($should_run_now && $enabled)) {
       // Set the last run time before attempting backup.
       // This will prevent a failing schedule from retrying on every cron run.
       $this->setLastRun(REQUEST_TIME);
 
       try {
+        $config = [];
+        if ($settings_profile_id = $this->get('settings_profile_id')) {
+          // Load the settings profile if one is selected.
+          $profile = SettingsProfile::load($settings_profile_id);
+          if (!$profile) {
+            throw new BackupMigrateException(
+              "The settings profile '%profile' does not exist",
+              ['%profile' => $settings_profile_id]);
+          }
+          $config = $profile->get('config');
+        }
+
         \Drupal::logger('backup_migrate')->info("Running schedule %name", ['%name' => $this->get('label')]);
         // TODO: Set the config (don't just use the defaults).
         // Run the backup.
-        $bam->backup($this->get('source_id'), $this->get('destination_id'));
+        $bam->setConfig(new Config($config));
+        $bam->backup($this->get('source_id'), $this->get('destination_id'), $config);
         drupal_set_message('Backup Complete.');
       }
       catch (BackupMigrateException $e) {
         \Drupal::logger('backup_migrate')->error(
-          "Error during scheduled backup (%name): %err",
-          ['%name' => $this->get('label'), '%err' => $e->getMessage()]
+          "Scheduled backup '%name' failed: @err",
+          ['%name' => $this->get('label'), '@err' => $e->getMessage()]
         );
       }
     }
@@ -127,13 +142,13 @@ class Schedule extends ConfigEntityBase {
    *
    * @param int $seconds
    * @return array An array containing the period definition and the number of them.
-   *  ['units' => 123, 'type' => [...]]
+   *  ['number' => 123, 'type' => [...]]
    * @throws \BackupMigrate\Core\Exception\BackupMigrateException
    */
-  protected static function secondsToPeriod($seconds) {
+  public static function secondsToPeriod($seconds) {
     foreach (array_reverse(Schedule::getPeriodTypes()) as $type) {
       if (($seconds % $type['seconds']) === 0) {
-        return ['units' => $seconds / $type['seconds'], 'type' => $type];
+        return ['number' => $seconds / $type['seconds'], 'type' => $type];
       }
     }
 
@@ -147,8 +162,8 @@ class Schedule extends ConfigEntityBase {
    * @return mixed
    * @throws \BackupMigrate\Core\Exception\BackupMigrateException
    */
-  protected static function periodToSeconds($period) {
-    return $period['units'] * $period['type']['seconds'];
+  public static function periodToSeconds($period) {
+    return $period['number'] * $period['type']['seconds'];
   }
 
   /**
@@ -157,8 +172,8 @@ class Schedule extends ConfigEntityBase {
    * @param $period
    * @return \Drupal\Core\StringTranslation\PluralTranslatableMarkup
    */
-  protected static function formatPeriod($period) {
-    return \Drupal::translation()->formatPlural($period['units'], $period['type']['singular'], $period['type']['plural']);
+  public static function formatPeriod($period) {
+    return \Drupal::translation()->formatPlural($period['number'], $period['type']['singular'], $period['type']['plural']);
   }
 
   /**
@@ -167,7 +182,7 @@ class Schedule extends ConfigEntityBase {
    *
    * @return array
    */
-  protected static function getPeriodTypes() {
+  public static function getPeriodTypes() {
     return array(
       'seconds' => array('type' => 'seconds', 'seconds' => 1, 'title' => 'Seconds', 'singular' => 'Once a second', 'plural' => 'Every @count seconds'),
       'minutes' => array('type' => 'minutes', 'seconds' => 60, 'title' => 'Minutes', 'singular' => 'Once a minute', 'plural' => 'Every @count minutes'),
@@ -175,6 +190,16 @@ class Schedule extends ConfigEntityBase {
       'days' => array('type' => 'days', 'seconds' => 86400, 'title' => 'Days', 'singular' => 'Daily', 'plural' => 'Every @count days'),
       'weeks' => array('type' => 'weeks', 'seconds' => 604800, 'title' => 'Weeks', 'singular' => 'Weekly', 'plural' => 'Every @count weeks'),
     );
+  }
+
+  /**
+   * Get a backup period type given it's key.
+   *
+   * @param string $type
+   * @return array
+   */
+  public static function getPeriodType($type) {
+    return Schedule::getPeriodTypes()[$type];
   }
 
 }

@@ -20,7 +20,7 @@ use BackupMigrate\Core\File\ReadableStreamBackupFile;
  * Class ServerDirectoryDestination
  * @package BackupMigrate\Core\Destination
  */
-class DirectoryDestination extends DestinationBase implements ReadableDestinationInterface, ConfigurableInterface, FileProcessorInterface {
+class DirectoryDestination extends DestinationBase implements ListableDestinationInterface, ReadableDestinationInterface, ConfigurableInterface, FileProcessorInterface {
   use SidecarMetadataDestinationTrait;
 
   /**
@@ -39,6 +39,27 @@ class DirectoryDestination extends DestinationBase implements ReadableDestinatio
   }
 
   /**
+   * Get a definition for user-configurable settings.
+   *
+   * @param array $params
+   * @return array
+   */
+  public function configSchema($params = array()) {
+    $schema = array();
+
+    // Init settings.
+    if ($params['operation'] == 'initialize') {
+      $schema['fields']['directory'] = [
+        'type' => 'text',
+        'title' => $this->t('Directory Path'),
+      ];
+    }
+
+    return $schema;
+  }
+
+
+  /**
    * Do the actual file save. This function is called to save the data file AND
    * the metadata sidecar file.
    * @param \BackupMigrate\Core\File\BackupFileReadableInterface $file
@@ -48,7 +69,7 @@ class DirectoryDestination extends DestinationBase implements ReadableDestinatio
     // Check if the directory exists.
     $this->checkDirectory();
 
-    rename($file->realpath(), $this->confGet('directory') . $file->getFullName());
+    copy($file->realpath(), $this->_idToPath($file->getFullName()));
     // @TODO: use copy/unlink if the temp file and the destination do not share a stream wrapper.
   }
 
@@ -109,18 +130,14 @@ class DirectoryDestination extends DestinationBase implements ReadableDestinatio
   /**
    * {@inheritdoc}
    */
-  public function listFiles($count = 100, $start = 0) {
-    $dir = $this->confGet('directory');
-    $out = array();
-
-    // Get the entire list of filenames
+  public function _allFiles() {
+    // Get the entire list of filenames.
     $files = $this->_getAllFileNames();
 
-    // Limit to only the items specified.
-    for ($i = $start; $i < min($start + $count, count($files)); $i++) {
-      $file = $files[$i];
-      $filepath = $dir . '/' . $file;
-      $out[$file] = new ReadableStreamBackupFile($filepath);
+    // Make a file reference object for each file.
+    $out = [];
+    foreach ($files as $file) {
+      $out[$file] = new ReadableStreamBackupFile($this->_idToPath($file));
     }
 
     return $out;
@@ -131,7 +148,8 @@ class DirectoryDestination extends DestinationBase implements ReadableDestinatio
    * @return int The number of files in the destination.
    */
   public function countFiles() {
-    $files = $this->_getAllFileNames();
+    // @TODO: Find a better way to do this.
+    $files = $this->listFiles(10000);
     return count($files);
   }
 
@@ -161,7 +179,7 @@ class DirectoryDestination extends DestinationBase implements ReadableDestinatio
    * @return string
    */
   protected function _idToPath($id) {
-    return $this->confGet('directory') . $id;
+    return rtrim($this->confGet('directory'), '/') . '/' . $id;
   }
 
   /**
@@ -177,8 +195,7 @@ class DirectoryDestination extends DestinationBase implements ReadableDestinatio
     if ($handle = opendir($dir)) {
       while (FALSE !== ($file = readdir($handle))) {
         $filepath = $dir . '/' . $file;
-        // Don't show hidden or unreadable files
-        // @TODO: Filter out unsupported and metadata files.
+        // Don't show hidden, unreadable or metadata files
         if (substr($file, 0, 1) !== '.' && is_readable($filepath)) {
           $files[] = $file;
         }

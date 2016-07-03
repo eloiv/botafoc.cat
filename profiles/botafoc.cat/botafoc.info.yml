@@ -47,6 +47,9 @@ dependencies:
   - fpa
   - libraries
   - entity_clone
+  - block_visibility_groups
+  - fbl
+  - anonymous_login
 
   # Fields
   - field_group
@@ -57,6 +60,8 @@ dependencies:
   - markup
   - filefield_paths
   - rdfui
+  - focal_point
+  - smart_trim
 
   # Text formats and Editors
   - editor_file

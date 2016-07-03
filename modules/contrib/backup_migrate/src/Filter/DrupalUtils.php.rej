@@ -1,0 +1,10 @@
+--- src/Filter/DrupalUtils.php
++++ src/Filter/DrupalUtils.php
+@@ -17,7 +16,6 @@
+  * @package BackupMigrate\Drupal\Filter
+  */
+ class DrupalUtils extends PluginBase {
+-  use TranslatableTrait;
+ 
+   /**
+    * @var boolean Whether the site was put in maintenance mode before the operation.
