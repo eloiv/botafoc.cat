@@ -1,0 +1,12 @@
+status: true
+dependencies:
+  module:
+    - node
+id: all_by_title
+label: 'All by title'
+type: 'canonical_entities:node'
+pattern: '[node:menu-link:parents]/[node:title]'
+selection_criteria: {  }
+selection_logic: and
+weight: 0
+relationships: {  }
