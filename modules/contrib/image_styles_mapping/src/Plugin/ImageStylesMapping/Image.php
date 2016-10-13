@@ -2,15 +2,15 @@
 
 namespace Drupal\image_styles_mapping\Plugin\ImageStylesMapping;
 
-use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Core\Routing\LinkGeneratorTrait;
 use Drupal\Core\Url;
 use Drupal\image_styles_mapping\Plugin\ImageStylesMappingPluginBase;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Link;
 
 /**
+ * Image Plugin.
+ *
  * @ImageStylesMapping(
  *   id = "image_styles",
  *   label = @Translation("Image styles"),
@@ -18,34 +18,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 class Image extends ImageStylesMappingPluginBase implements ContainerFactoryPluginInterface {
-  use LinkGeneratorTrait;
-
-  /**
-   * Drupal\Core\Entity\EntityTypeManager definition.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManager
-   */
-  protected $entity_type_manager;
-
-  /**
-   * {@inheritdoc}
-   */
-  public function __construct(array $configuration, $plugin_id, array $plugin_definition, EntityTypeManager $entity_type_manager) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->entity_type_manager = $entity_type_manager;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static(
-      $configuration,
-      $plugin_id,
-      $plugin_definition,
-      $container->get('entity_type.manager')
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -98,7 +70,8 @@ class Image extends ImageStylesMappingPluginBase implements ContainerFactoryPlug
     $image_styles = &drupal_static(__FUNCTION__);
 
     if (!isset($image_styles)) {
-      $image_styles_entities = $this->entity_type_manager->getStorage('image_style')->loadMultiple();
+      /** @var \Drupal\image\Entity\ImageStyle[] $image_styles_entities */
+      $image_styles_entities = $this->entityTypeManager->getStorage('image_style')->loadMultiple();
 
       $image_styles = array();
       foreach ($image_styles_entities as $image_styles_entity) {
@@ -139,7 +112,8 @@ class Image extends ImageStylesMappingPluginBase implements ContainerFactoryPlug
 
     // Use the routing system to check access.
     if ($url->renderAccess($url->toRenderArray())) {
-      return $this->l($link_text, $url);
+      $link = Link::fromTextAndUrl($link_text, $url)->toRenderable();
+      return render($link);
     }
     else {
       return $image_style_label;

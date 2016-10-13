@@ -13,6 +13,11 @@ namespace Drupal\fences;
 interface TagManagerInterface {
 
   /**
+   * The stored value representing "no markup".
+   */
+  const NO_MARKUP_VALUE = 'none';
+
+  /**
    * Get the tags that can wrap fields.
    *
    * @return array

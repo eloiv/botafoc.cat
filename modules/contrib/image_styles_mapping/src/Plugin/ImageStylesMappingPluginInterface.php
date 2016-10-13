@@ -3,8 +3,7 @@
 namespace Drupal\image_styles_mapping\Plugin;
 
 /**
- * Provides an interface for a plugin that add columns on image styles mapping
- * reports.
+ * Interface for a plugin that add columns on image styles mapping reports.
  *
  * @ingroup plugin_api
  */
@@ -32,8 +31,8 @@ interface ImageStylesMappingPluginInterface {
    * @param array $field_settings
    *   The field display of the row.
    *
-   * @return string
-   *   The header for the column added by the plugin.
+   * @return \Drupal\Component\Render\FormattableMarkup
+   *   The row content for the plugin for this field.
    */
   public function getRowData(array $field_settings);
 

@@ -1,0 +1,12 @@
+status: true
+dependencies:
+  module:
+    - user
+id: user_path
+label: 'User path'
+type: 'canonical_entities:user'
+pattern: 'u/[user:account-name]'
+selection_criteria: {  }
+selection_logic: and
+weight: 0
+relationships: {  }

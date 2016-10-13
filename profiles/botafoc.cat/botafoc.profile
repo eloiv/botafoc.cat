@@ -29,10 +29,22 @@ function botafoc_install_tasks_alter(&$tasks, $install_state) {
   foreach($all_tasks as $key => $value) {
     $tasks[$key] = $value;
 
-    // Is required to install_configuration executed after install_import_translations.
+    if ($key == 'install_profile_modules') {
+      $tasks['install_enabled_modules'] = array(
+        'display_name' => t('Enabled modules'),
+      );
+    }
+
     if ($key == 'install_import_translations') {
       $tasks['install_initial_configuration'] = array(
         'display_name' => t('Install configuration'),
+      );
+    }
+
+    // Is required to install_configuration executed after install_import_translations.
+    if ($key == 'install_finished') {
+      $tasks['install_last_configuration'] = array(
+        'display_name' => t('Last configuration'),
       );
     }
   }
@@ -41,7 +53,6 @@ function botafoc_install_tasks_alter(&$tasks, $install_state) {
   $tasks['install_select_language'] = array(
     'display' => 0,
   );
-
 }
 
 function install_select_languages(&$install_state) {
@@ -94,14 +105,44 @@ function install_select_configuration(&$install_state) {
   }
 }
 
+function install_enabled_modules(&$install_state) {
+  if (!empty($_GET['langcodes'])) {
+    \Drupal::service('module_installer')->install(['dropdown_language']);
+  }
+}
+
 function install_initial_configuration(&$install_state) {
   if (!empty($_GET['langcodes'])) {
     $langcodes = $_GET['langcodes'];
-
     foreach($langcodes as $key => $value) {
       if ($key != $_GET['langcode']) {
         ConfigurableLanguage::createFromLangcode($key)->save();
       }
     }
+  }
+}
+
+function install_last_configuration(&$install_state) {
+  if(!empty($_GET['langcode'])) {
+    $user = \Drupal\user\Entity\User::load(1);
+    $user->set("preferred_langcode", $_GET['langcode']);
+    $user->set("preferred_admin_langcode", $_GET['langcode']);
+    $user->save();
+  }
+
+  if(!empty($_GET['langcodes'])) {
+    \Drupal::service('module_installer')->install(['content_translation']);
+    \Drupal::service('module_installer')->install(['config_translation']);
+  }
+}
+
+function botafoc_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'install_configure_form') {
+    $form['site_information']['#type'] = 'details';
+    $form['site_information']['#open'] = TRUE;
+    $form['admin_account']['#type'] = 'details';
+    $form['admin_account']['#open'] = TRUE;
+    $form['regional_settings']['#type'] = 'details';
+    $form['update_notifications']['#type'] = 'details';
   }
 }

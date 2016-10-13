@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\extlink\Form\ExtlinkAdminSettingsForm.
- */
-
 namespace Drupal\extlink\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
@@ -18,7 +13,7 @@ class ExtlinkAdminSettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function getFormID() {
+  public function getFormId() {
     return 'extlink_admin_settings';
   }
 
@@ -42,7 +37,7 @@ class ExtlinkAdminSettingsForm extends ConfigFormBase {
       '#title' => $this->t('Place an icon next to mailto links'),
       '#return_value' => 'mailto',
       '#default_value' => $config->get('extlink_mailto_class'),
-      '#description' => $this->t('Places an <span class="mailto"> </span>&nbsp; icon next to mailto links.', array('!icon' => $renderer->render($mailto_icon))),
+      '#description' => $this->t('Places an <span class="mailto"> </span>&nbsp; icon next to mailto links.'),
     );
 
     $form['extlink_img_class'] = array(
@@ -112,12 +107,12 @@ class ExtlinkAdminSettingsForm extends ConfigFormBase {
       '#type' => 'details',
       '#title' => $this->t('Pattern matching'),
       '#description' =>
-        '<p>' . $this->t('External links uses patterns (regular expressions) to match the "href" property of links.') . '</p>' .
-        $this->t('Here are some common patterns.') .
-        $renderer->render($patterns) .
-        $this->t('Common special characters:') .
-        $renderer->render($wildcards) .
-        '<p>' . $this->t('All special characters (!character) must also be escaped with backslashes. Patterns are not case-sensitive. Any <a href="http://www.javascriptkit.com/javatutors/redev2.shtml">pattern supported by JavaScript</a> may be used.', array('!characters' => '<code>^ $ . ? ( ) | * +</code>')) . '</p>',
+      '<p>' . $this->t('External links uses patterns (regular expressions) to match the "href" property of links.') . '</p>' .
+      $this->t('Here are some common patterns.') .
+      $renderer->render($patterns) .
+      $this->t('Common special characters:') .
+      $renderer->render($wildcards) .
+      '<p>' . $this->t('All special characters (<code>@characters</code>) must also be escaped with backslashes. Patterns are not case-sensitive. Any <a href="http://www.javascriptkit.com/javatutors/redev2.shtml">pattern supported by JavaScript</a> may be used.', array('@characters' => '^ $ . ? ( ) | * +')) . '</p>',
       '#open' => FALSE,
     );
 
@@ -144,7 +139,7 @@ class ExtlinkAdminSettingsForm extends ConfigFormBase {
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
       '#description' =>
-        '<p>' . $this->t('Use CSS selectors to exclude entirely or only look inside explicitly specified classes and IDs for external links.  These will be passed straight to jQuery for matching.') . '</p>',
+      '<p>' . $this->t('Use CSS selectors to exclude entirely or only look inside explicitly specified classes and IDs for external links.  These will be passed straight to jQuery for matching.') . '</p>',
     );
 
     $form['css_matching']['extlink_css_exclude'] = array(
@@ -192,7 +187,7 @@ class ExtlinkAdminSettingsForm extends ConfigFormBase {
       ->set('extlink_css_explicit', $values['extlink_css_explicit'])
       ->save();
 
-    parent::SubmitForm($form, $form_state);
+    parent::submitForm($form, $form_state);
   }
 
   /**

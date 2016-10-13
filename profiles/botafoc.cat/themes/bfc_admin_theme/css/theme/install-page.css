@@ -6,24 +6,60 @@
  * .maintenance-page styling.
  */
 body.install-page {
-  background-color: #008080;
-  background-image: none;
+  background-color: #3476A8;
+  background-image: url('../../images/background_palafrugell.jpg');
+  background-position: center;
 }
 
 .install-page header {
   text-align: center;
   padding-bottom: 15px;
   margin-bottom: 15px;
-  border-bottom: solid 1px #008080;
+  border-bottom: solid 2px #3476A8;
+  display: table;
+  width: 100%;
+}
+
+.install-page h1 {
+  color: #3476a8;
+}
+
+.install-page .layout-container {
+  border-radius: 0px;
+  background-color: rgba(255,255,255,0.8);
+}
+
+.install-page .header-wrapper {
+  margin: 0 auto;
+  width: 50%;
+}
+
+.install-page header img {
+  float: left;
+}
+
+.install-page .task-list .is-active {
+  background-color: #3476A8;
+  color: #FFFFFF;
+}
+
+.install-page .header-info {
+  margin-top: 30px;
+  float: left;
+  margin-left: 20px;
 }
 
 .install-page h1.page-title {
   width: 100%;
   margin: 0px;
+  color: #57595A;
 }
 
+.install-page span.botafoc-version,
 .install-page span.site-version {
   font-size: 1.0em;
+  display: block;
+  color: #57595A;
 }
 
 .install-page aside.layout-sidebar-first {
@@ -34,6 +70,21 @@ body.install-page {
   border-width: 0px;
 }
 
-.toolbar-icon-admin-toolbar-tools-help::before {
-  background-image: url("../../images/botafoc.png")
+/* Form */
+
+#edit-langcode,
+#edit-langcodes {
+  width: 90%;
+}
+
+@media (max-width: 1000px) {
+  .install-page header img {
+    float: none;
+  }
+
+  .install-page .header-info {
+    margin-top: 0;
+    float: none;
+    margin-left: 20px;
+  }
 }

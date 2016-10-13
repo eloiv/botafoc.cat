@@ -37,4 +37,3 @@ extlink.settings:
     extlink_mailto_class:
       type: string
       label: 'Add icon to mailto links'
-

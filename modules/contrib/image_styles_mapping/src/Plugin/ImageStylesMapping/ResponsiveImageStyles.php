@@ -3,14 +3,14 @@
 namespace Drupal\image_styles_mapping\Plugin\ImageStylesMapping;
 
 use Drupal\Component\Render\FormattableMarkup;
-use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\Core\Routing\LinkGeneratorTrait;
 use Drupal\Core\Url;
 use Drupal\image_styles_mapping\Plugin\ImageStylesMappingPluginBase;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Link;
 
 /**
+ * ResponsiveImageStyles Plugin.
+ *
  * @ImageStylesMapping(
  *   id = "responsive_image_styles",
  *   label = @Translation("Responsive image styles"),
@@ -18,34 +18,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 class ResponsiveImageStyles extends ImageStylesMappingPluginBase implements ContainerFactoryPluginInterface {
-  use LinkGeneratorTrait;
-
-  /**
-   * Drupal\Core\Entity\EntityTypeManager definition.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManager
-   */
-  protected $entity_type_manager;
-
-  /**
-   * {@inheritdoc}
-   */
-  public function __construct(array $configuration, $plugin_id, array $plugin_definition, EntityTypeManager $entity_type_manager) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->entity_type_manager = $entity_type_manager;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static(
-      $configuration,
-      $plugin_id,
-      $plugin_definition,
-      $container->get('entity_type.manager')
-    );
-  }
 
   /**
    * {@inheritdoc}
@@ -98,7 +70,8 @@ class ResponsiveImageStyles extends ImageStylesMappingPluginBase implements Cont
     $responsive_image_styles = &drupal_static(__FUNCTION__);
 
     if (!isset($responsive_image_styles)) {
-      $responsive_image_style_entities = $this->entity_type_manager->getStorage('responsive_image_style')->loadMultiple();
+      /** @var \Drupal\responsive_image\Entity\ResponsiveImageStyle[] $responsive_image_style_entities */
+      $responsive_image_style_entities = $this->entityTypeManager->getStorage('responsive_image_style')->loadMultiple();
 
       $responsive_image_styles = array();
       foreach ($responsive_image_style_entities as $responsive_image_style_entity) {
@@ -141,7 +114,8 @@ class ResponsiveImageStyles extends ImageStylesMappingPluginBase implements Cont
 
     // Use the routing system to check access.
     if ($url->renderAccess($url->toRenderArray())) {
-      return $this->l($link_text, $url);
+      $link = Link::fromTextAndUrl($link_text, $url)->toRenderable();
+      return render($link);
     }
     else {
       return $responsive_image_style_label;

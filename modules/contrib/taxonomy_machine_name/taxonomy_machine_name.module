@@ -49,7 +49,12 @@ function taxonomy_machine_name_form_taxonomy_overview_terms_alter(
   foreach (\Drupal\Core\Render\Element::children($form['terms']) as $key) {
     /** @var \Drupal\taxonomy\Entity\Term $term */
     $term = $form['terms'][$key]['#term'];
-    $machine_name = $term->get('machine_name')->first()->getValue();
+    if (!empty($term_machine_name = $term->get('machine_name')->first())) {
+      $machine_name = $term_machine_name->getValue()['value'];
+    }
+    else {
+      $machine_name = '';
+    }
 
     // Look for term position to place machine name just after.
     if ($position === FALSE) {
@@ -62,7 +67,7 @@ function taxonomy_machine_name_form_taxonomy_overview_terms_alter(
 
     $column = array(
       '#type'  => 'link',
-      '#title' => $machine_name['value'],
+      '#title' => $machine_name,
       '#url'   => $form['terms'][$key]['term']['#url'],
     );
 
@@ -85,9 +90,16 @@ function taxonomy_machine_name_form_taxonomy_term_form_alter(
   if (isset($form['name'])) {
     /** @var Term $term */
     $term = $form_state->getFormObject()->getEntity();
-    if ($term->hasField('machine_name') && $term->get('machine_name')->count()) {
-      $default_value = $term->get('machine_name')->first()->getValue()['value'];
-    } else {
+    if ($term->hasField('machine_name')) {
+      if (!empty($term_machine_name = $term->get('machine_name')->first())) {
+        $default_value = $term_machine_name->getValue()['value'];
+      }
+      else {
+        $name = $term->get('name')->first()->getValue()['value'];
+        $default_value = taxonomy_machine_name_clean_name($name);
+      }
+    }
+    else {
       $default_value = '';
     }
 
@@ -102,7 +114,7 @@ function taxonomy_machine_name_form_taxonomy_term_form_alter(
       '#weight'        => $form['name']['#weight'] + 0.01,
     );
 
-    $form['validate'][] = 'taxonomy_machine_name_form_validate';
+    $form['#validate'][] = 'taxonomy_machine_name_form_validate';
   }
 }
 

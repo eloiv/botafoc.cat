@@ -1,0 +1,60 @@
+.adminimal h1 {
+  margin-top: 10px;
+}
+
+.adminimal .content-header {
+  background-color: #425862;
+
+}
+
+body.path-user-login {
+  background-color: #F1F1F1;
+}
+
+.path-user-login header h1 {
+  display: none;
+}
+
+.path-user-login .page-content {
+  background-color: #FFFFFF;
+  width: 320px;
+  margin: 10% auto 0%;
+  padding-top: 5px;
+}
+.path-user-login #user-login-form {
+  padding: 0px 25px 0px;
+}
+
+.path-user-login #user-login-form label {
+    font-size: 17px;
+    margin-bottom: 15px;
+}
+
+.path-user-login #user-login-form #edit-submit {
+  float: left;
+}
+
+.path-user-login .links {
+  padding: 0px 25px 30px;
+  float: right;
+}
+.path-user-login .logo {
+  width: 320px;
+  margin: 5px auto;
+  padding: 5px 0px 3px;
+  text-align: center;
+  background-color: #FFFFFF;
+}
+
+.path-user-login .logo a {
+  font-size: 20px;
+  color: #595959;
+  text-decoration: none;
+  bottom: 5px;
+  position: relative;
+}
+
+.path-user-login .logo img {
+  width: 25px;
+  margin-right: 5px;
+}

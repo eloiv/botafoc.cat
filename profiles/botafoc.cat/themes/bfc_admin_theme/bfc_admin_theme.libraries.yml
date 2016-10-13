@@ -2,3 +2,6 @@ bfc-styling:
   css:
     theme:
       css/theme/install-page.css: {}
+      css/theme/bfc-styles.css: {}
+  js:
+    js/install-page.js: {}

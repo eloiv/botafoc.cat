@@ -1,0 +1,5 @@
+name: Botafoc.cat core
+core: 8.x
+description: General features styles and javascripts
+package: Botafoc.cat
+type: module

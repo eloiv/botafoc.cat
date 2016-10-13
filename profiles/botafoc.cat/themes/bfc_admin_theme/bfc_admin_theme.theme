@@ -1,32 +1,9 @@
 <?php
 
-// Move checkbox of permission on left.
-function bfc_admin_theme_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-  if($form_id == 'user_admin_permissions') {
-    $description = array_shift($form['permissions']['#header']);
-    array_push($form['permissions']['#header'], $description);
-    foreach ($form['permissions'] as $key => $value) {
-      if (substr($key, 0, 1) != '#') {
-        $first_key = key($value);
-        if (!is_integer($first_key) && $first_key == 'description') {
-          $description = array_shift($form['permissions'][$key]);
-          array_push($form['permissions'][$key], $description);
-        }
-        else {
-          $empty_td = array(
-            '#wrapper_attributes' => array(
-              'colspan' => 1,
-              'class' => array('module'),
-              'id' => 'module-' . $provider,
-            ),
-            '#markup' => '',
-          );
-
-          for($i = 1; $i <= count(user_roles()); $i++) {
-            array_unshift($form['permissions'][$key], $empty_td);
-          }
-        }
-      }
-    }
+function bfc_admin_theme_preprocess_html(&$variables) {
+  $current_path = \Drupal::service('path.current')->getPath();
+  $path_args = explode('/', $current_path);
+  if ($path_args[1] == 'user' and ($path_args[2] == 'login')) {
+    $variables['attributes']['class'][]= 'path-user-login';
   }
 }

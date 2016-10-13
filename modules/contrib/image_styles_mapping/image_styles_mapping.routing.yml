@@ -11,7 +11,7 @@ image_styles_mapping.report.fields:
   defaults:
     _controller: '\Drupal\image_styles_mapping\Controller\ImageStylesMappingController::getReport'
     _title: 'Image Styles Mapping Fields Report'
-    reportName: 'fieldsReport'
+    report_name: 'fieldsReport'
   requirements:
     _permission: 'access_image_styles_mapping_report'
 
@@ -20,7 +20,7 @@ image_styles_mapping.report.views:
   defaults:
     _controller: '\Drupal\image_styles_mapping\Controller\ImageStylesMappingController::getReport'
     _title: 'Image Styles Mapping Views Report'
-    reportName: 'viewsFieldsReport'
+    report_name: 'viewsFieldsReport'
   requirements:
     _permission: 'access_image_styles_mapping_report'
     _module_dependencies: 'views'

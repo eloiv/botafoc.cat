@@ -1,36 +1,36 @@
 punctuation:
-  punctuationdouble_quotes: 0
-  punctuationquotes: 0
-  punctuationbacktick: 0
-  punctuationcomma: 0
-  punctuationperiod: 0
-  punctuationhyphen: 1
-  punctuationunderscore: 0
-  punctuationcolon: 0
-  punctuationsemicolon: 0
-  punctuationpipe: 0
-  punctuationleft_curly: 0
-  punctuationleft_square: 0
-  punctuationright_curly: 0
-  punctuationright_square: 0
-  punctuationplus: 0
-  punctuationequal: 0
-  punctuationasterisk: 0
-  punctuationampersand: 0
-  punctuationpercent: 0
-  punctuationcaret: 0
-  punctuationdollar: 0
-  punctuationhash: 0
-  punctuationat: 0
-  punctuationexclamation: 0
-  punctuationtilde: 0
-  punctuationleft_parenthesis: 0
-  punctuationright_parenthesis: 0
-  punctuationquestion_mark: 0
-  punctuationless_than: 0
-  punctuationgreater_than: 0
-  punctuationslash: 0
-  punctuationback_slash: 0
+  double_quotes: 0
+  quotes: 0
+  backtick: 0
+  comma: 0
+  period: 0
+  hyphen: 1
+  underscore: 0
+  colon: 0
+  semicolon: 0
+  pipe: 0
+  left_curly: 0
+  left_square: 0
+  right_curly: 0
+  right_square: 0
+  plus: 0
+  equal: 0
+  asterisk: 0
+  ampersand: 0
+  percent: 0
+  caret: 0
+  dollar: 0
+  hash: 0
+  at: 0
+  exclamation: 0
+  tilde: 0
+  left_parenthesis: 0
+  right_parenthesis: 0
+  question_mark: 0
+  less_than: 0
+  greater_than: 0
+  slash: 0
+  back_slash: 0
 verbose: false
 separator: '-'
 max_length: 100
@@ -40,4 +40,7 @@ reduce_ascii: true
 ignore_words: ''
 case: true
 update_action: 2
-langcode: en
+_core:
+  default_config_hash: EwN3ottqIUVXbySshpOACZXLhgqPhqs5DqSCpi7QwMw
+enabled_entity_types:
+  - user

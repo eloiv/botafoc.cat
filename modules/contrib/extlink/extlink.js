@@ -1,6 +1,10 @@
+/**
+ * @file
+ */
+
 (function ($, Drupal, drupalSettings) {
 
-  "use strict";
+  'use strict';
 
   Drupal.extlink = Drupal.extlink || {};
 
@@ -10,35 +14,35 @@
     }
 
     // Strip the host name down, removing ports, subdomains, or www.
-    var pattern = /^(([^\/:]+?\.)*)([^\.:]{4,})((\.[a-z]{1,4})*)(:[0-9]{1,5})?$/;
+    var pattern = /^(([^\/:]+?\.)*)([^\.:]{1,})((\.[a-z0-9]{1,253})*)(:[0-9]{1,5})?$/;
     var host = window.location.host.replace(pattern, '$3$4');
     var subdomain = window.location.host.replace(pattern, '$1');
 
     // Determine what subdomains are considered internal.
     var subdomains;
     if (drupalSettings.data.extlink.extSubdomains) {
-      subdomains = "([^/]*\\.)?";
+      subdomains = '([^/]*\\.)?';
     }
     else if (subdomain === 'www.' || subdomain === '') {
-      subdomains = "(www\\.)?";
+      subdomains = '(www\\.)?';
     }
     else {
-      subdomains = subdomain.replace(".", "\\.");
+      subdomains = subdomain.replace('.', '\\.');
     }
 
     // Build regular expressions that define an internal link.
-    var internal_link = new RegExp("^https?://" + subdomains + host, "i");
+    var internal_link = new RegExp('^https?://' + subdomains + host, 'i');
 
     // Extra internal link matching.
     var extInclude = false;
     if (drupalSettings.data.extlink.extInclude) {
-      extInclude = new RegExp(drupalSettings.data.extlink.extInclude.replace(/\\/, '\\'), "i");
+      extInclude = new RegExp(drupalSettings.data.extlink.extInclude.replace(/\\/, '\\'), 'i');
     }
 
     // Extra external link matching.
     var extExclude = false;
     if (drupalSettings.data.extlink.extExclude) {
-      extExclude = new RegExp(drupalSettings.data.extlink.extExclude.replace(/\\/, '\\'), "i");
+      extExclude = new RegExp(drupalSettings.data.extlink.extExclude.replace(/\\/, '\\'), 'i');
     }
 
     // Extra external link CSS selector exclusion.
@@ -61,9 +65,16 @@
     // available in jQuery 1.0 (Drupal 5 default).
     var external_links = [];
     var mailto_links = [];
-    $("a:not(." + drupalSettings.data.extlink.extClass + ", ." + drupalSettings.data.extlink.mailtoClass + "), area:not(." + drupalSettings.data.extlink.extClass + ", ." + drupalSettings.data.extlink.mailtoClass + ")", context).each(function (el) {
+    $('a:not(.' + drupalSettings.data.extlink.extClass + ', .' + drupalSettings.data.extlink.mailtoClass + '), area:not(.' + drupalSettings.data.extlink.extClass + ', .' + drupalSettings.data.extlink.mailtoClass + ')', context).each(function (el) {
       try {
-        var url = this.href.toLowerCase();
+        var url = '';
+        if (typeof this.href == 'string') {
+          url = this.href.toLowerCase();
+        }
+        // Handle SVG links (xlink:href).
+        else if (typeof this.href == 'object') {
+          url = this.href.baseVal;
+        }
         if (url.indexOf('http') === 0
           && ((!url.match(internal_link) && !(extExclude && url.match(extExclude))) || (extInclude && url.match(extInclude)))
           && !(extCssExclude && $(this).parents(extCssExclude).length > 0)
@@ -97,7 +108,32 @@
 
     if (drupalSettings.data.extlink.extTarget) {
       // Apply the target attribute to all links.
-      $(external_links).attr('target', drupalSettings.data.extlink.extTarget);
+      if (drupalSettings.data.extlink.extTarget) {
+        $(external_links).attr('target', '_blank');
+        $(external_links).attr('rel', function (i, val) {
+          // If no rel attribute is present, create one with the values noopener and noreferrer.
+          if (val === null) {
+            return 'noopener nofererer';
+          }
+          // Check to see if rel contains noopener or noreferrer. Add what doesn't exist.
+          if (val.indexOf('noopener') > -1 || val.indexOf('noreferrer') > -1) {
+            if (val.indexOf('noopener') === -1) {
+              return val + ' noopener';
+            }
+            if (val.indexOf('noreferrer') === -1) {
+              return val + ' noreferrer';
+            }
+            // Both noopener and noreferrer exist. Nothing needs to be added.
+            else {
+              return val;
+            }
+          }
+          // Else, append noopener and noreferrer to val.
+          else {
+            return val + ' noopener nofererer';
+          }
+        });
+      }
     }
 
     Drupal.extlink = Drupal.extlink || {};
@@ -111,16 +147,16 @@
     };
 
     $(external_links).click(function (e) {
-      return Drupal.extlink.popupClickHandler(e);
+      return Drupal.extlink.popupClickHandler(e, this);
     });
   };
 
   /**
    * Apply a class and a trailing <span> to all links not containing images.
    *
-   * @param links
+   * @param {object[]} links
    *   An array of DOM elements representing the links.
-   * @param class_name
+   * @param {string} class_name
    *   The class to apply to the links.
    */
   Drupal.extlink.applyClassAndSpan = function (links, class_name) {

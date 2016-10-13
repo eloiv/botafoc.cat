@@ -1,14 +1,9 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\image_styles_mapping\Controller\ImageStylesMappingController.
- */
-
 namespace Drupal\image_styles_mapping\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\image_styles_mapping\Service\ImageStylesMappingService;
+use Drupal\image_styles_mapping\Service\ImageStylesMappingServiceInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -47,9 +42,9 @@ class ImageStylesMappingController extends ControllerBase {
   protected $viewsFieldsReportEmptyValue;
 
   /**
-   * Image styles mapping service.
+   * Image styles mapping service Interface.
    *
-   * @var ImageStylesMappingService
+   * @var ImageStylesMappingServiceInterface
    */
   protected $imageStylesMappingService;
 
@@ -65,10 +60,11 @@ class ImageStylesMappingController extends ControllerBase {
   /**
    * Constructs a new ImageStylesMappingController.
    *
-   * @param \Drupal\image_styles_mapping\Service\ImageStylesMappingService $imageStylesMappingService
+   * @param \Drupal\image_styles_mapping\Service\ImageStylesMappingServiceInterface $image_styles_mapping_service
+   *   An instance of imageStylesMappingService.
    */
-  public function __construct(ImageStylesMappingService $imageStylesMappingService) {
-    $this->imageStylesMappingService = $imageStylesMappingService;
+  public function __construct(ImageStylesMappingServiceInterface $image_styles_mapping_service) {
+    $this->imageStylesMappingService = $image_styles_mapping_service;
     $this->fieldsReportTitle = $this->t('Image fields');
     $this->fieldsReportEmptyValue = $this->t('No image styles or responsive image styles have been used in any views fields yet.');
     $this->viewsFieldsReportTitle = $this->t('View image fields');
@@ -76,6 +72,8 @@ class ImageStylesMappingController extends ControllerBase {
   }
 
   /**
+   * Retrieves the available reports.
+   *
    * @return string[]
    *   Name of available reports.
    */
@@ -88,16 +86,18 @@ class ImageStylesMappingController extends ControllerBase {
   }
 
   /**
-   * @param string $reportName
+   * Checks if a report matches conditions to be available.
+   *
+   * @param string $report_name
    *   The report's name.
    *
    * @return bool
    *   TRUE if the report is available. FALSE otherwise.
    */
-  public function isAvailableReport($reportName) {
+  public function isAvailableReport($report_name) {
     $available = FALSE;
     // TODO: Remove the hardcoded reports, maybe using a plugin architecture.
-    switch ($reportName) {
+    switch ($report_name) {
       case 'fieldsReport':
         $available = TRUE;
         break;
@@ -112,19 +112,21 @@ class ImageStylesMappingController extends ControllerBase {
   }
 
   /**
-   * @param string $reportName
+   * Generates a report.
+   *
+   * @param string $report_name
    *   The report name to display.
    *
    * @return array
    *   Display a table of the image styles used in fields.
    */
-  public function getReport($reportName) {
-    $fieldReport = $this->imageStylesMappingService->{$reportName}();
+  public function getReport($report_name) {
+    $field_report = $this->imageStylesMappingService->{$report_name}();
     return $this->renderTable(
-      $this->{$reportName . 'Title'},
-      $fieldReport['header'],
-      $fieldReport['rows'],
-      $this->{$reportName . 'EmptyValue'});
+      $this->{$report_name . 'Title'},
+      $field_report['header'],
+      $field_report['rows'],
+      $this->{$report_name . 'EmptyValue'});
   }
 
   /**
@@ -137,9 +139,9 @@ class ImageStylesMappingController extends ControllerBase {
     $reports = $this->getAvailableReports();
     $output = array();
 
-    foreach ($reports as $reportName) {
-      if ($this->isAvailableReport($reportName)) {
-        $output[] = $this->getReport($reportName);
+    foreach ($reports as $report_name) {
+      if ($this->isAvailableReport($report_name)) {
+        $output[] = $this->getReport($report_name);
       }
     }
 
@@ -192,7 +194,7 @@ class ImageStylesMappingController extends ControllerBase {
    *   The table's header.
    * @param array $rows
    *   The table's row.
-   * @param $empty_string
+   * @param string $empty_string
    *   The string to use of the table is empty.
    *
    * @return array
@@ -215,4 +217,5 @@ class ImageStylesMappingController extends ControllerBase {
 
     return $output;
   }
+
 }

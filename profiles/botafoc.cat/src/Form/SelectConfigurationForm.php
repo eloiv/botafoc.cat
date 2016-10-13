@@ -78,11 +78,13 @@ class SelectConfigurationForm extends FormBase {
     $this->_move_all_config_files_directory('general');
     $this->_move_all_config_files_directory('seven');
     $this->_move_all_config_files_directory('bfc_admin_theme');
-    $this->_move_all_config_files_directory('bartik');
+    $this->_move_all_config_files_directory('bootstrap');
     $this->_move_all_config_files_directory('text_formats_editors');
     $this->_move_all_config_files_directory('user');
+    $this->_move_all_config_files_directory('linkit');
 
     if(!empty($_GET['langcodes'])){
+      # Enabled multilanguage modules
       $this->_move_all_config_files_directory('multilanguage');
     }
 

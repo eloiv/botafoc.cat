@@ -1,0 +1,2 @@
+paths: 'admin*'
+message: 'Access denied'

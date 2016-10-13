@@ -15,11 +15,14 @@ use Drupal\Core\Plugin\Discovery\YamlDiscovery;
 use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Component\Plugin\Discovery\CachedDiscoveryInterface;
 use Drupal\Core\Plugin\Discovery\ContainerDerivativeDiscoveryDecorator;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
  * Gathers and provides the tags that can be used to wrap fields.
  */
 class TagManager extends DefaultPluginManager implements TagManagerInterface, PluginManagerInterface, CachedDiscoveryInterface {
+
+  use StringTranslationTrait;
 
   /**
    * {@inheritdoc}
@@ -61,7 +64,9 @@ class TagManager extends DefaultPluginManager implements TagManagerInterface, Pl
    * {@inheritdoc}
    */
   public function getTagOptions() {
-    $options = [];
+    $options = [
+      TagManagerInterface::NO_MARKUP_VALUE => $this->t('None (No wrapping HTML)')
+    ];
     foreach ($this->getDefinitions() as $id => $definition) {
       $options[$definition['group']][$id] = t('@label (@tag)', ['@label' => $definition['label'], '@tag' => $id]);
     }

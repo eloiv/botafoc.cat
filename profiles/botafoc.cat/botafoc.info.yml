@@ -42,19 +42,32 @@ dependencies:
   # Administration
   - admin_toolbar
   - admin_toolbar_tools
+  - adminimal_admin_toolbar
   - coffee
-  # - mpac
+  - fpa
+  - libraries
+  - entity_clone
+  - block_visibility_groups
+  - fbl
+  - anonymous_login
+  - backup_migrate
 
   # Fields
   - field_group
   - menu_link_attributes
-  - fff
   - fences
   - image_formatter_link_to_image_style
+  - markup
+  - filefield_paths
+  - rdfui
+  - focal_point
+  - smart_trim
+  - viewsreference
 
   # Text formats and Editors
   - editor_file
   - editor_advanced_link
+  - linkit
 
   # Taxonomies
   - taxonomy_access_fix
@@ -66,6 +79,7 @@ dependencies:
 
   # Path
   - pathauto
+  - subpathauto
 
   # SEO
   - hreflang
@@ -73,10 +87,17 @@ dependencies:
   # Tokens
   - token
 
-  # Performance
-  - big_pipe
+  # Views
+  - verf
+
+  # image styles
+  - image_styles_mapping
+
+
+  #Botafoc.cat
+  - bfc_core
 
 themes:
-  - bartik
-  - seven
+  - bootstrap
+  - adminimal_theme
   - bfc_admin_theme
