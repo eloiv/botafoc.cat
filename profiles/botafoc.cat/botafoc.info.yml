@@ -39,6 +39,7 @@ dependencies:
   - rdf
 
   # Contrib modules
+
   # Administration
   - admin_toolbar
   - admin_toolbar_tools
@@ -51,6 +52,10 @@ dependencies:
   - fbl
   - anonymous_login
   - backup_migrate
+  - taxonomy_multidelete_terms
+  - diff
+  - menu_link_weight
+  - module_filter
 
   # Fields
   - field_group
@@ -63,19 +68,33 @@ dependencies:
   - focal_point
   - smart_trim
   - viewsreference
+  - date_popup
+  - multiple_selects
+  - chosen
+  - chosen_field
 
   # Text formats and Editors
   - editor_file
   - editor_advanced_link
   - linkit
+  - fakeobjects
+  - ckeditor_responsive_plugin
+  - ckeditor_iframe
+  - anchor_link
+  - colorbutton
+  # - colordialog
 
   # Taxonomies
-  - taxonomy_access_fix
+  # - taxonomy_access_fix SOLVED on 8.3
   - taxonomy_machine_name
+
+  # Language
+  # Enabled modules if exist two or more language
 
   # UX
   - extlink
   - logouttab
+  - login_emailusername
 
   # Path
   - pathauto
@@ -83,6 +102,7 @@ dependencies:
 
   # SEO
   - hreflang
+  # - imagefield_default_alt_and_title
 
   # Tokens
   - token
@@ -90,11 +110,21 @@ dependencies:
   # Views
   - verf
 
+  # Layout
+  - twig_tweak
+  - themable_forms
+
   # image styles
   - image_styles_mapping
 
+  # Performance
+  # - advagg
 
-  #Botafoc.cat
+  # Development
+  - config_log
+
+
+  # Botafoc.cat
   - bfc_core
 
 themes:

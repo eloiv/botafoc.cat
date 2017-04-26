@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\advanced_help\Plugin\Derivative\DynamicLocalTasks.
- */
 
 namespace Drupal\advanced_help\Plugin\Derivative;
 

@@ -1,0 +1,12 @@
+name: Configuration log
+type: module
+description: 'Logs changes to configuration.'
+package: Configuration
+# version: VERSION
+# core: 8.x
+
+# Information added by Drupal.org packaging script on 2016-11-12
+version: '8.x-1.1'
+core: '8.x'
+project: 'config_log'
+datestamp: 1478978643

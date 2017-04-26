@@ -1,0 +1,4 @@
+contact_emails.contact_emails_controller_list_selection:
+  title: 'Manage emails'
+  route_name: contact_emails.contact_emails_controller_list_selection
+  base_route: entity.contact_form.collection

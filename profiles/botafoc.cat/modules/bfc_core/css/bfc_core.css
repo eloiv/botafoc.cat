@@ -1,24 +1,27 @@
 
 #toolbar-administration .toolbar-icon-admin-toolbar-tools-help::before {
-  background-image: url("../../../themes/bfc_admin_theme/images/logo_green.png");
+  background-image: url("../../../themes/bfc_admin_theme/images/logo2.png");
   background-size: auto 80%;
-  background-color: #314953;
+  background-color: #536c76;
   width: 55px;
   left: 0em;
   margin-left: 0px;
 }
 
 .adminimal-admin-toolbar #toolbar-administration.toolbar .toolbar-bar {
-  background-color: #172126;
+  background-color: #3e5158;
 }
 
 .adminimal-admin-toolbar #toolbar-administration.toolbar .toolbar-menu,
 .adminimal-admin-toolbar #toolbar-administration.toolbar .toolbar-menu li {
-  background: #2a3e47;
+  background: #536c76;
 }
 
 .adminimal-admin-toolbar #toolbar-administration .toolbar-tray a {
   color: #FFFFFF;
+}
+.adminimal-admin-toolbar #toolbar-administration .toolbar-tray-horizontal {
+  border-bottom: none;
 }
 .adminimal-admin-toolbar #toolbar-administration .toolbar-tray-horizontal a:hover,
 .adminimal-admin-toolbar #toolbar-administration .toolbar-tray-horizontal a:active,
@@ -37,12 +40,12 @@
 }
 
 .adminimal-admin-toolbar #toolbar-administration.toolbar .toolbar-bar .toolbar-tab > .toolbar-item:hover {
-  background-color: #2a3e47;
+  background-color: #536c76;
 }
 
 .adminimal-admin-toolbar #toolbar-administration.toolbar .toolbar-bar .toolbar-tab > .toolbar-item.is-active,
 .adminimal-admin-toolbar #toolbar-administration.toolbar .toolbar-bar .toolbar-tab > .toolbar-item:focus {
-  background-color: #2a3e47;
+  background-color: #536c76;
 }
 
 .adminimal-admin-toolbar #toolbar-administration.toolbar .toolbar-tray .menu-item--active-trail > .toolbar-box a,
@@ -51,11 +54,11 @@
 }
 
 .adminimal-admin-toolbar #toolbar-administration.toolbar .toolbar-tray {
-  background-color: #2a3e47;
+  background-color: #536c76;
 }
 
 .adminimal-admin-toolbar #toolbar-administration.toolbar .toolbar-toggle-orientation {
-  background-color: #2a3e47;
+  background-color: #536c76;
 }
 
 .adminimal-admin-toolbar #toolbar-administration.toolbar .toolbar-tray-vertical .toolbar-menu a {
@@ -63,15 +66,15 @@
 }
 
 .adminimal-admin-toolbar #toolbar-administration.toolbar .menu-item:hover {
-  background-color: #2a3e47;
+  background-color: #536c76;
 }
 
 .adminimal-admin-toolbar #toolbar-administration.toolbar .menu-item:focus {
-  background: #2a3e47;
+  background: #536c76;
 }
 
 .adminimal-admin-toolbar #toolbar-administration.toolbar .menu-item--expanded {
-  background-color: #2a3e47;
+  background-color: #536c76;
 }
 
 .adminimal-admin-toolbar #toolbar-administration .toolbar-tray-horizontal ul li.menu-item--expanded ul li.menu-item--expanded:after {
@@ -87,5 +90,5 @@
 }
 
 .adminimal-admin-toolbar #toolbar-administration.toolbar .toolbar-tray-horizontal ul  ul li.menu-item:first-child {
-  border-top: solid 1px #172126;
+  border-top: solid 1px #536c76;
 }

@@ -4,4 +4,3 @@ services:
     arguments: ["@path.current", "@config.factory", "@state", "@current_user", "@path.matcher"]
     tags:
       - { name: event_subscriber }
-

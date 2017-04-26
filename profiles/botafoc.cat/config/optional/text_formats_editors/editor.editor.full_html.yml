@@ -1,3 +1,4 @@
+uuid: 423695fb-0de7-405d-9ce0-4d3fbe2308bb
 status: true
 dependencies:
   config:
@@ -10,9 +11,9 @@ third_party_settings:
     status: true
     scheme: public
     directory: inline-files
-    extensions: txt
+    extensions: 'txt jpg png gif pdf docx odt'
 _core:
-  default_config_hash: 967ijj7p6i7rwrYl7r08WQFeCY_c23YAh0h8u-w_CXM
+  default_config_hash: CRSjRe9PmEmYxlMB1JcNwJENc_JMZzhOpr07KgnnGDo
 format: full_html
 editor: ckeditor
 settings:
@@ -24,6 +25,9 @@ settings:
           items:
             - Bold
             - Italic
+            - Underline
+            - TextColor
+            - BGColor
             - Strike
             - Superscript
             - Subscript
@@ -33,6 +37,7 @@ settings:
           name: Linking
           items:
             - Linkit
+            - Anchor
             - DrupalUnlink
         -
           name: Lists
@@ -44,22 +49,31 @@ settings:
           items:
             - Blockquote
             - DrupalImage
+            - DrupalFile
+            - Iframe
             - Table
             - HorizontalRule
         -
           name: 'Block Formatting'
           items:
+            - JustifyLeft
+            - JustifyCenter
+            - JustifyRight
+            - JustifyBlock
             - Format
+            - AddResponsiveArea
         -
           name: Tools
           items:
             - ShowBlocks
             - Source
   plugins:
-    stylescombo:
-      styles: ''
     language:
       language_list: un
+    stylescombo:
+      styles: ''
+    colorbutton:
+      colors: ''
     linkit:
       linkit_profile: basic
 image_upload:

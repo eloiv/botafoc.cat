@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\coffee\Form\CoffeeConfigurationForm.
- */
-
 namespace Drupal\coffee\Form;
 
 use Drupal\Core\Form\ConfigFormBase;

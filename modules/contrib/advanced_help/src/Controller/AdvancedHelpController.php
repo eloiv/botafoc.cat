@@ -1,21 +1,17 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\advanced_help\Controller\AdvancedHelpController.
- */
-
 namespace Drupal\advanced_help\Controller;
 
-use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\Url;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Drupal\Component\Plugin\PluginManagerInterface;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\Xss;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\EventSubscriber\MainContentViewSubscriber;
+use Drupal\Core\Url;
+use Michelf\MarkdownExtra;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Class AdvancedHelpController.
@@ -227,7 +223,7 @@ class AdvancedHelpController extends ControllerBase {
     $pmodule = $module;
 
     // Loop checker.
-    $checked = array();
+    $checked = [];
     while (!empty($parent['parent'])) {
       if (strpos($parent['parent'], '%')) {
         list($pmodule, $ptopic) = explode('%', $parent['parent']);
@@ -285,28 +281,10 @@ class AdvancedHelpController extends ControllerBase {
       $build['#markup'] = file_get_contents($file);
       if (isset($info['readme file']) && $info['readme file']) {
         $ext = pathinfo($file, PATHINFO_EXTENSION);
-        if ('md' == $ext && $this->advanced_help->isMarkdownFilterEnabled()) {
-          libraries_load('php-markdown', 'markdown-extra');
-          $build['#markup'] = '<div class="advanced-help-topic">' . Xss::filterAdmin(\Michelf\MarkdownExtra::defaultTransform($build['#markup'])) . '</div>';
+        if ('md' == $ext) {
+          $build['#markup'] = '<div class="advanced-help-topic">' . Xss::filterAdmin(MarkdownExtra::defaultTransform($build['#markup'])) . '</div>';
         }
-        else {
-          $readme = '';
-          if ('md' == $ext) {
-            $readme .=
-              '<p>' .
-              $this->t('If you install the !module module, the text below will be filtered by the module, producing rich text.',
-                [
-                  '!module' => $this->l($this->t('Markdown filter'),
-                    Url::fromUri('https://www.drupal.org/project/markdown'),
-                    ['attributes' => ['title' => $this->t('Link to project.')]])
-                ]) . '</p>';
-          }
-
-          $readme .=
-            '<div class="advanced-help-topic"><pre class="readme">' . SafeMarkup::checkPlain($build['#markup']) . '</pre></div>';
-          $build['#markup'] = $readme;
-        }
-        return $build['#markup'];
+        return $build;
       }
 
       // Change 'topic:' to the URL for another help topic.

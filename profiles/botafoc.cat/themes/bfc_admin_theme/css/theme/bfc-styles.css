@@ -3,7 +3,7 @@
 }
 
 .adminimal .content-header {
-  background-color: #425862;
+  background-color: #334349;
 
 }
 
@@ -57,4 +57,29 @@ body.path-user-login {
 .path-user-login .logo img {
   width: 25px;
   margin-right: 5px;
+}
+
+.layout-region-node-main,
+.layout-region-node-footer {
+  border: solid 1px #CCCCCC;
+  padding-left: 2em;
+  padding-right: 2em;
+}
+@media screen and (min-width:780px),(orientation:landscape) and (min-device-height:780px){
+  .layout-region-node-main,
+  .layout-region-node-footer {
+    width: 64%;
+  }
+}
+
+.layout-region-node-footer {
+  background-color: #f7f7f7;
+  margin-top: 2em;
+}
+
+.layout-region-node-secondary-top {
+  background-color: #f7f7f7;
+  margin-bottom: 2em;
+  padding-left: 2em;
+  border: solid 1px #CCCCCC;
 }

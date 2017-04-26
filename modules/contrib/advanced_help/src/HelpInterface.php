@@ -1,8 +1,4 @@
 <?php
-/**
- * @file
- * Provides Drupal\advanced_help\HelpInterface
- */
 
 namespace Drupal\advanced_help;
 

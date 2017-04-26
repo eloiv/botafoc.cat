@@ -1,17 +1,16 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\coffee\Controller\CoffeeController.
- */
-
 namespace Drupal\coffee\Controller;
 
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Drupal\Core\Access\AccessManagerInterface;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\Component\Utility\Xss;
+use Drupal\Core\Menu\LocalTaskManagerInterface;
+use Drupal\Core\Menu\MenuLinkTreeInterface;
 use Drupal\Core\Menu\MenuTreeParameters;
 use Drupal\Core\Url;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
  * Provides route responses for coffee.module.
@@ -19,53 +18,104 @@ use Drupal\Core\Url;
 class CoffeeController extends ControllerBase {
 
   /**
+   * The coffee config.
+   *
+   * @var \Drupal\Core\Config\ImmutableConfig
+   */
+  protected $config;
+
+  /**
+   * The menu link tree service.
+   *
+   * @var \Drupal\Core\Menu\MenuLinkTreeInterface
+   */
+  protected $menuLinkTree;
+
+  /**
+   * The local task manager service.
+   *
+   * @var \Drupal\Core\Menu\LocalTaskManagerInterface
+   */
+  protected $localTaskManager;
+
+  /**
+   * The access manager service.
+   *
+   * @var \Drupal\Core\Access\AccessManagerInterface
+   */
+  protected $accessManager;
+
+  /**
+   * Constructs a new CoffeeController object.
+   *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   The config factory service.
+   * @param \Drupal\Core\Menu\MenuLinkTreeInterface $menu_link_tree
+   *   The menu link tree service.
+   * @param \Drupal\Core\Menu\LocalTaskManagerInterface $local_task_manager
+   *   The local task manager service.
+   * @param \Drupal\Core\Access\AccessManagerInterface $access_manager
+   *   The access manager service.
+   */
+  public function __construct(ConfigFactoryInterface $config_factory, MenuLinkTreeInterface $menu_link_tree, LocalTaskManagerInterface $local_task_manager, AccessManagerInterface $access_manager) {
+    $this->config = $config_factory->get('coffee.configuration');
+    $this->menuLinkTree = $menu_link_tree;
+    $this->localTaskManager = $local_task_manager;
+    $this->accessManager = $access_manager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('config.factory'),
+      $container->get('menu.link_tree'),
+      $container->get('plugin.manager.menu.local_task'),
+      $container->get('access_manager')
+    );
+  }
+
+  /**
    * Outputs the data that is used for the Coffee autocompletion in JSON.
+   *
+   * @return \Symfony\Component\HttpFoundation\JsonResponse
+   *   The json response.
    */
   public function coffeeData() {
     $output = array();
 
-    // Get configured menus from configuration.
-    $menus = \Drupal::config('coffee.configuration')->get('coffee_menus');
-    if ($menus !== NULL) {
-      foreach ($menus as $v) {
-        if ($v === '0') {
-          continue;
-        }
+    foreach ($this->config->get('coffee_menus') as $menu_name) {
+      $tree = $this->getMenuTreeElements($menu_name);
+      $commands_group = $menu_name == 'account' ? ':user' : NULL;
 
-        // Build the menu tree.
-        $menu_tree_parameters = new MenuTreeParameters();
-        $tree = \Drupal::menuTree()->load($v, $menu_tree_parameters);
+      foreach ($tree as $tree_element) {
+        $link = $tree_element->link;
 
-        foreach ($tree as $key => $link) {
+        $output[$link->getRouteName()] = array(
+          'value' => $link->getUrlObject()->toString(),
+          'label' => $link->getTitle(),
+          'command' => $commands_group,
+        );
 
-          $command = ($v == 'user-menu') ? ':user' : NULL;
-          $this->coffee_traverse_below($link, $output, $command);
+        $tasks = $this->getLocalTasksForRoute($link->getRouteName(), $link->getRouteParameters());
 
+        foreach ($tasks as $route_name => $task) {
+          if (empty($output[$route_name])) {
+            $output[$route_name] = array(
+              'value' => $task['url']->toString(),
+              'label' => $link->getTitle() . ' - ' . $task['title'],
+              'command' => NULL,
+            );
+          }
         }
       }
     }
 
-    $commands = array();
-
-    foreach (\Drupal::moduleHandler()
-                    ->getImplementations('coffee_commands') as $module) {
-      $commands = array_merge($commands, \Drupal::moduleHandler()
-                                                ->invoke($module, 'coffee_commands', array()));
-    }
+    $commands = $this->moduleHandler()->invokeAll('coffee_commands');
 
     if (!empty($commands)) {
       $output = array_merge($output, $commands);
-    }
-
-    foreach ($output as $k => $v) {
-      if ($v['value'] == '<front>') {
-        unset($output[$k]);
-        continue;
-      }
-
-      // Filter out XSS.
-      $output[$k]['label'] = Xss::filter($output[$k]['label']);
-
     }
 
     // Re-index the array.
@@ -75,74 +125,83 @@ class CoffeeController extends ControllerBase {
   }
 
   /**
-   * Function coffee_traverse_below().
+   * Retrieves the menu tree elements for the given menu.
    *
-   * Helper function to traverse down through a menu structure.
+   * Every element returned by this method is already access checked.
+   *
+   * @param string $menu_name
+   *   The menu name.
+   *
+   * @return \Drupal\Core\Menu\MenuLinkTreeElement[]
+   *   A flatten array of menu link tree elements for the given menu.
    */
-  protected function coffee_traverse_below($link, &$output, $command = NULL) {
-    $l = isset($link->link) ? $link->link : array();
+  protected function getMenuTreeElements($menu_name) {
+    $parameters = new MenuTreeParameters();
+    $tree = $this->menuLinkTree->load($menu_name, $parameters);
 
-    // Only add link if user has access.
+    $manipulators = [
+      ['callable' => 'menu.default_tree_manipulators:checkNodeAccess'],
+      ['callable' => 'menu.default_tree_manipulators:checkAccess'],
+      ['callable' => 'menu.default_tree_manipulators:generateIndexAndSort'],
+      ['callable' => 'menu.default_tree_manipulators:flatten'],
+    ];
+    $tree = $this->menuLinkTree->transform($tree, $manipulators);
 
-    $url = $l->getUrlObject();
-    if ($url->access()) {
-      $title = $l->getTitle();
-      $label = (!empty($title) ? $title : 'test');
-      $output[] = array(
-        'value' => $url->toString(),
-        'label' => $label,
-        'command' => $command,
-      );
-    }
-
-
-    if ($link->subtree) {
-      foreach ($link->subtree as $below_link) {
-        $this->coffee_traverse_below($below_link, $output);
+    // Top-level inaccessible links are *not* removed; it is up
+    // to the code doing something with the tree to exclude inaccessible links.
+    // @see menu.default_tree_manipulators:checkAccess
+    foreach ($tree as $key => $element) {
+      if (!$element->access->isAllowed()) {
+        unset($tree[$key]);
       }
     }
 
-    $manager = \Drupal::service('plugin.manager.menu.local_task');
-
-    $local_tasks = $manager->getLocalTasksForRoute($l->getRouteName());
-    if ($local_tasks) {
-      $command = NULL;
-      foreach ($local_tasks as $key => $local_task_link) {
-        $this->coffee_traverse_local_tasks($local_task_link, $output);
-      }
-    }
-
-
+    return $tree;
   }
 
   /**
-   * Helper function to traverse the local tasks.
+   * Retrieve all the local tasks for a given route.
+   *
+   * Every element returned by this method is already access checked.
+   *
+   * @param string $route_name
+   *   The route name for which find the local tasks.
+   * @param array $route_parameters
+   *   The route parameters.
+   *
+   * @return array
+   *   A flatten array that contains the local tasks for the given route.
+   *   Each element in the array is keyed by the route name associated with
+   *   the local tasks and contains:
+   *     - title: the title of the local task.
+   *     - url: the url object for the local task.
+   *     - localized_options: the localized options for the local task.
    */
-  protected function coffee_traverse_local_tasks($local_task_link, &$output) {
-    if (is_array($local_task_link)) {
-      foreach ($local_task_link as $key => $local_task) {
-        $this->coffee_traverse_local_tasks($local_task, $output);
+  protected function getLocalTasksForRoute($route_name, array $route_parameters) {
+    $links = array();
+
+    $tree = $this->localTaskManager->getLocalTasksForRoute($route_name);
+    $route_match = \Drupal::routeMatch();
+
+    foreach ($tree as $instances) {
+      /* @var $instances \Drupal\Core\Menu\LocalTaskInterface[] */
+      foreach ($instances as $child) {
+        $child_route_name = $child->getRouteName();
+        // Merges the parent's route parameter with the child ones since you
+        // calculate the local tasks outside of parent route context.
+        $child_route_parameters = $child->getRouteParameters($route_match) + $route_parameters;
+
+        if ($this->accessManager->checkNamedRoute($child_route_name, $child_route_parameters)) {
+          $links[$child_route_name] = [
+            'title' => $child->getTitle(),
+            'url' => Url::fromRoute($child_route_name, $child_route_parameters),
+            'localized_options' => $child->getOptions($route_match),
+          ];
+        }
       }
     }
-    else {
-      $local_task = $local_task_link;
-    }
 
-    if (is_object($local_task)) {
-
-      $route_name = $local_task->getPluginDefinition()['route_name'];
-      $route_parameters = $local_task->getPluginDefinition()['route_parameters'];
-      $url = Url::fromRoute($route_name, $route_parameters);
-
-      $label = $local_task->getTitle();
-      if ($url->access() && !$url->isRouted()) {
-        $output[] = array(
-          'value' => $url,
-          'label' => $label,
-          'command' => 'NULL',
-        );
-      }
-    }
-
+    return $links;
   }
+
 }

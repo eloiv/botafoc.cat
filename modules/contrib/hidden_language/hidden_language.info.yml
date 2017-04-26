@@ -1,0 +1,15 @@
+name: Hidden Language
+description: Hide specific languages on a site.
+package: Multilingual
+# core: 8.x
+configure: entity.configurable_language.collection
+type: module
+
+dependencies:
+  - language
+
+# Information added by Drupal.org packaging script on 2016-11-02
+version: '8.x-1.x-dev'
+core: '8.x'
+project: 'hidden_language'
+datestamp: 1478113147

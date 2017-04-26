@@ -53,6 +53,7 @@ function botafoc_install_tasks_alter(&$tasks, $install_state) {
   $tasks['install_select_language'] = array(
     'display' => 0,
   );
+  //var_dump('<pre>',$tasks);
 }
 
 function install_select_languages(&$install_state) {
@@ -107,7 +108,8 @@ function install_select_configuration(&$install_state) {
 
 function install_enabled_modules(&$install_state) {
   if (!empty($_GET['langcodes'])) {
-    \Drupal::service('module_installer')->install(['dropdown_language']);
+    \Drupal::service('module_installer')->install(['lang_dropdown']);
+    \Drupal::service('module_installer')->install(['hidden_language']);
   }
 }
 
@@ -134,15 +136,68 @@ function install_last_configuration(&$install_state) {
     \Drupal::service('module_installer')->install(['content_translation']);
     \Drupal::service('module_installer')->install(['config_translation']);
   }
+
+  drupal_flush_all_caches();
 }
 
 function botafoc_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
   if ($form_id == 'install_configure_form') {
+    $form['#attributes']['novalidate'] = 'novalidate';
     $form['site_information']['#type'] = 'details';
     $form['site_information']['#open'] = TRUE;
+    $form['site_information']['#weight'] = 1;
     $form['admin_account']['#type'] = 'details';
     $form['admin_account']['#open'] = TRUE;
+    $form['admin_account']['#weight'] = 2;
+
+    if(!empty($_GET['editor'])) {
+      $form['editor_create']['#title'] = 'Create a user editor?';
+      $form['editor_create']['#type'] = 'details';
+      $form['editor_create']['#open'] = TRUE;
+      $form['editor_create']['#weight'] = 3;
+      $form['editor_create']['check'] = array(
+        '#type' =>'checkbox',
+        '#title' => t('Do you want to create a user editor?'),
+      );
+      $form['editor_account']['#title'] = 'Editor account';
+      $form['editor_account']['#type'] = 'details';
+      $form['editor_account']['#open'] = TRUE;
+      $form['editor_account']['#weight'] = 4;
+      $form['editor_account']['editor'] = $form['admin_account']['account'];
+      $form['editor_account']['editor']['name']['#required'] = FALSE;
+      $form['editor_account']['editor']['pass']['#required'] = FALSE;
+      $form['editor_account']['editor']['mail']['#required'] = FALSE;
+
+      $form['editor_account']['#states'] = array(
+        'visible' => array(
+          ':input[name="check"]' => array('checked' => TRUE),
+        ),
+        'required' => array(
+          ':input[name="check"]' => array('checked' => FALSE),
+        ),
+      );
+      //$form['actions']['submit']['#submit'][] = 'editor_user_save';
+      $form['actions']['submit']['#validate'][] = 'editor_user_save';
+    }
+
     $form['regional_settings']['#type'] = 'details';
+    $form['regional_settings']['#weight'] = 5;
     $form['update_notifications']['#type'] = 'details';
+    $form['update_notifications']['#weight'] = 6;
+  }
+}
+
+function editor_user_save($form, Drupal\Core\Form\FormStateInterface $form_state) {
+  if (!empty($form_state->getValue('editor'))) {
+    $editor_account = $form_state->getValue('editor');
+    $user_editor = \Drupal\user\Entity\User::create();
+    // Mandatory.
+    $user_editor->setUsername($editor_account['name']);
+    $user_editor->setPassword($editor_account['pass']);
+    $user_editor->setEmail($editor_account['mail']);
+    $user_editor->enforceIsNew();
+    $user_editor->addRole('editor');
+    $user_editor->activate();
+    $user_editor->save();
   }
 }

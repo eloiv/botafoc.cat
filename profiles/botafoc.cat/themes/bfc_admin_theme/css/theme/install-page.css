@@ -6,9 +6,11 @@
  * .maintenance-page styling.
  */
 body.install-page {
-  background-color: #3476A8;
+  background-color: #536c76;
   background-image: url('../../images/background_palafrugell.jpg');
   background-position: center;
+   background-repeat: no-repeat;
+   background-attachment: fixed;
 }
 
 .install-page header {

@@ -1,16 +1,10 @@
 <?php
-/**
- * @file
- * Contains AdvancedHelpManager
- */
 
 namespace Drupal\advanced_help;
 
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Extension\ThemeHandlerInterface;
-use Drupal\Component\Discovery\YamlDiscovery;
-use Drupal\Core\Plugin\Factory\ContainerFactory;
 use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -82,7 +76,7 @@ class AdvancedHelpManager extends DefaultPluginManager {
 
   /**
    * Search the system for all available help topics.
-    @todo check visibility of the method.
+   * @todo check visibility of the method.
    */
   public function getTopics() {
     $ini = $this->parseHelp();
@@ -209,12 +203,13 @@ class AdvancedHelpManager extends DefaultPluginManager {
       return FALSE;
     }
 
+    $path_type = (preg_match('/themes/', $info['path'])) ? 'theme' : 'module';
     // Search paths:
     $paths = [
 //      // Allow theme override.
 //      path_to_theme() . '/help',
       // Translations.
-      drupal_get_path('module', $module) . "/translations/help/$language",
+      drupal_get_path($path_type, $module) . "/translations/help/$language",
       // In same directory as .inc file.
       $info['path'],
     ];
@@ -235,11 +230,4 @@ class AdvancedHelpManager extends DefaultPluginManager {
     }
   }
 
-  /**
-   * Return true if the markdown filter is present.
-   * @return bool
-   */
-  public function isMarkdownFilterEnabled() {
-    return $this->module_handler->moduleExists('markdown');
-  }
 }

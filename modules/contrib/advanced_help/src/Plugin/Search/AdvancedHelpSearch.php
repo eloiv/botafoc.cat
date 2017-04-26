@@ -1,21 +1,13 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\advanced_help\Plugin\Search\AdvancedHelpSearch.
- */
-
 namespace Drupal\advanced_help\Plugin\Search;
 
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Database\Connection;
-use Drupal\Core\Entity\EntityManagerInterface;
-use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Access\AccessibleInterface;
 use Drupal\search\Plugin\SearchPluginBase;
 use Drupal\advanced_help\AdvancedHelpManager;
-use Drupal\search\Plugin\ConfigurableSearchPluginBase;
 use Drupal\search\Plugin\SearchIndexingInterface;
 use Drupal\Core\Config\Config;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -270,6 +262,6 @@ class AdvancedHelpSearch extends SearchPluginBase implements AccessibleInterface
         ->execute()
         ->fetchField();
     }
-    return array('remaining' => $total - $indexed, 'total' => $total);
+    return ['remaining' => $total - $indexed, 'total' => $total];
   }
 }

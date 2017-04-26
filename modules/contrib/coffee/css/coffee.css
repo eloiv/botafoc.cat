@@ -17,7 +17,7 @@
   z-index: 999;
 }
 
-.coffee-form-wrapper{
+.coffee-form-wrapper {
   pointer-events: none;
   left: 0;
   width: 100%;
@@ -27,7 +27,7 @@
 }
 #coffee-form {
   pointer-events: auto;
-  position:relative;
+  position: relative;
   margin: 0 auto;
   max-width: 500px;
   width: 100%;
@@ -50,7 +50,7 @@
 
 #coffee-form,
 #coffee-form input,
-#coffee-form a{
+#coffee-form a {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
@@ -166,12 +166,12 @@
 
 .toolbar .toolbar-bar .toolbar-icon-coffee:before,
 .toolbar .toolbar-bar .toolbar-icon-coffee.active:before {
-    background-image: url("../images/icons/bebebe/coffee.svg");
+  background-image: url("../images/icons/bebebe/coffee.svg");
 }
 
-#coffee-q{
-    background-image: url("../images/icons/bebebe/coffee.svg");
-    background-position: right 10px center;
-    background-repeat: no-repeat;
-    background-size: 40px 40px;
+#coffee-q {
+  background-image: url("../images/icons/bebebe/coffee.svg");
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 40px 40px;
 }

@@ -1,0 +1,7 @@
+services:
+  contact_emails.emailer:
+    class: Drupal\contact_emails\ContactEmailerServiceProvider
+    arguments: ["@plugin.manager.mail", "@token", "@contact_emails.helper", "@current_user", "@renderer", "@email.validator", "@entity_type.manager"]
+  contact_emails.helper:
+    class: Drupal\contact_emails\ContactEmails
+    arguments: ["@database", "@cache.default", "@entity_field.manager", "@entity_type.bundle.info"]

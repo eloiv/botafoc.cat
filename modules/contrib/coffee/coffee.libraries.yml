@@ -12,6 +12,3 @@ drupal.coffee:
     - core/jquery.once
     - core/jquery.ui
     - core/jquery.ui.autocomplete
-  jquery.ui.autocomplete:
-    version: 1.8.11
-    

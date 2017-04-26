@@ -2,8 +2,7 @@
 
 /**
  * @file
- * The hooks that are used by Coffee
- * includes an example of hook_coffee_commands().
+ * The hooks used by Coffee includes an example of hook_coffee_commands().
  */
 
 use Drupal\Core\Url;

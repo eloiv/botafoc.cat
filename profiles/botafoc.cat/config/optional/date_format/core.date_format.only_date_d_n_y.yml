@@ -1,0 +1,8 @@
+uuid: 5d4452ab-fa2a-438c-87d8-39e9074fccad
+langcode: und
+status: true
+dependencies: {  }
+id: only_date_d_n_y
+label: 'Only date d-n-Y'
+locked: false
+pattern: d-n-Y

@@ -4,10 +4,13 @@
  */
 
 (function ($, Drupal, drupalSettings, DrupalCoffee) {
+
+  'use strict';
+
   // Remap the filter functions for autocomplete to recognise the
   // extra value "command".
-  var proto = $.ui.autocomplete.prototype,
-    initSource = proto._initSource;
+  var proto = $.ui.autocomplete.prototype;
+  var initSource = proto._initSource;
 
   function filter(array, term) {
     var matcher = new RegExp($.ui.autocomplete.escapeRegex(term), 'i');
@@ -29,8 +32,27 @@
     }
   });
 
+  /**
+   * Coffee module namespace.
+   *
+   * @namespace
+   *
+   * @todo put this in Drupal.coffee to expose it.
+   */
   DrupalCoffee = DrupalCoffee || {};
 
+  /**
+   * Attaches coffee module behaviors.
+   *
+   * Initializes DOM elements coffee module needs to display the search.
+   *
+   * @type {Drupal~behavior}
+   *
+   * @prop {Drupal~behaviorAttach} attach
+   *   Attach coffee functionality to the page.
+   *
+   * @todo get most of it out of the behavior in dedicated functions.
+   */
   Drupal.behaviors.coffee = {
     attach: function () {
       $('body').once('coffee').each(function () {
@@ -52,20 +74,20 @@
         var autocomplete_data_element = 'ui-autocomplete';
 
         $.ajax({
-          url: drupalSettings.path.baseUrl + 'admin/coffee/get-data',
+          url: Drupal.url('admin/coffee/get-data'),
           dataType: 'json',
           success: function (data) {
             DrupalCoffee.dataset = data;
 
-            // Apply autocomplete plugin on show
+            // Apply autocomplete plugin on show.
             var $autocomplete = $(DrupalCoffee.field).autocomplete({
               source: DrupalCoffee.dataset,
               focus: function (event, ui) {
-                // Prevents replacing the value of the input field
+                // Prevents replacing the value of the input field.
                 DrupalCoffee.isItemSelected = true;
                 event.preventDefault();
               },
-              'change': function(event, ui) {
+              change: function (event, ui) {
                 DrupalCoffee.isItemSelected = false;
               },
               select: function (event, ui) {
@@ -78,12 +100,12 @@
             });
 
             $autocomplete.data(autocomplete_data_element)._renderItem = function (ul, item) {
-              // strip the basePath when displaying the link description
+              // Strip the basePath when displaying the link description.
               var description = item.value;
-              if(item.value.indexOf(drupalSettings.path.basePath) === 0){
-                  description = item.value.substring(drupalSettings.path.basePath.length);
+              if (item.value.indexOf(drupalSettings.path.basePath) === 0) {
+                description = item.value.substring(drupalSettings.path.basePath.length);
               }
-              return  $('<li></li>')
+              return $('<li></li>')
                 .data('item.autocomplete', item)
                 .append('<a>' + item.label + '<small class="description">' + description + '</small></a>')
                 .appendTo(ul);
@@ -98,8 +120,8 @@
               });
             };
 
-            DrupalCoffee.form.keydown(function(event) {
-              if (event.keyCode == 13) {
+            DrupalCoffee.form.keydown(function (event) {
+              if (event.keyCode === 13) {
                 var openInNewWindow = false;
 
                 if (event.metaKey) {
@@ -107,11 +129,11 @@
                 }
 
                 if (!DrupalCoffee.isItemSelected) {
-                    var $firstItem = $(DrupalCoffee.results).find('li:first').data('item.autocomplete');
-                    if (typeof $firstItem === 'object') {
-                        DrupalCoffee.redirect($firstItem.value, openInNewWindow);
-                        event.preventDefault();
-                    }
+                  var $firstItem = $(DrupalCoffee.results).find('li:first').data('item.autocomplete');
+                  if (typeof $firstItem === 'object') {
+                    DrupalCoffee.redirect($firstItem.value, openInNewWindow);
+                    event.preventDefault();
+                  }
                 }
               }
             });
@@ -121,11 +143,11 @@
           }
         });
 
-        $('.toolbar-icon-coffee').click(function(event) {
-            event.preventDefault();
-            DrupalCoffee.coffee_show();
+        $('.toolbar-icon-coffee').click(function (event) {
+          event.preventDefault();
+          DrupalCoffee.coffee_show();
         });
-        // Key events
+        // Key events.
         $(document).keydown(function (event) {
 
           // Show the form with alt + D. Use 2 keycodes as 'D' can be uppercase or lowercase.
@@ -150,7 +172,6 @@
 
   // Prefix the open and close functions to avoid
   // conflicts with autocomplete plugin.
-
   /**
    * Open the form and focus on the search field.
    */
@@ -166,7 +187,6 @@
    */
   DrupalCoffee.coffee_close = function () {
     DrupalCoffee.field.val('');
-    //DrupalCoffee.results.empty();
     DrupalCoffee.wrapper.addClass('hide-form');
     DrupalCoffee.bg.hide();
     $(DrupalCoffee.field).autocomplete({enable: false});
@@ -174,6 +194,11 @@
 
   /**
    * Close the Coffee form and redirect.
+   *
+   * @param {string} path
+   *   URL to redirect to.
+   * @param {bool} openInNewWindow
+   *   Indicates if the URL should be open in a new window.
    */
   DrupalCoffee.redirect = function (path, openInNewWindow) {
     DrupalCoffee.coffee_close();
@@ -188,6 +213,8 @@
 
   /**
    * The HTML elements.
+   *
+   * @todo use Drupal.theme.
    */
   DrupalCoffee.label = $('<label for="coffee-q" class="hidden" />').text(Drupal.t('Query', '', ''));
   DrupalCoffee.results = $('<div id="coffee-results" />');

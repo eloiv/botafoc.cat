@@ -4,47 +4,47 @@
  * Implements hook_schema().
  */
 function advanced_help_schema() {
-  $schema['advanced_help_index'] = array(
+  $schema['advanced_help_index'] = [
     'description' => 'Stores search index correlations for advanced help topics.',
-    'fields' => array(
-      'sid' => array(
+    'fields' => [
+      'sid' => [
         'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'description' => 'The primary key to give to the search engine for this topic.',
         'no export' => TRUE,
-      ),
-      'module' => array(
+      ],
+      'module' => [
         'type' => 'varchar',
         'length' => '255',
         'default' => '',
         'not null' => TRUE,
         'description' => 'The module that owns this topic.',
-      ),
-      'topic' => array(
+      ],
+      'topic' => [
         'type' => 'varchar',
         'length' => '255',
         'default' => '',
         'not null' => TRUE,
         'description' => 'The topic id.',
-      ),
-      'langcode' => array(
+      ],
+      'langcode' => [
         'type' => 'varchar',
         'length' => 12,
         'not null' => TRUE,
         'default' => '',
         'description' => 'The langcode this search index relates to.',
-      ),
-    ),
-    'primary key' => array('sid'),
-    'indexes' => array('langcode' => array('langcode')),
-    'foreign keys' => array(
-      'system' => array(
+      ],
+    ],
+    'primary key' => ['sid'],
+    'indexes' => ['langcode' => ['langcode']],
+    'foreign keys' => [
+      'system' => [
         'table' => 'system',
-        'columns' => array('name' => 'name'),
-      ),
-    ),
-  );
+        'columns' => ['name' => 'name'],
+      ],
+    ],
+  ];
 
   return $schema;
 }

@@ -1,22 +1,16 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\anonymous_login\AnonymousLoginSubscriber.
- */
-
 namespace Drupal\anonymous_login\EventSubscriber;
 
+use Drupal\Core\Config\ConfigFactory;
+use Drupal\Core\Path\CurrentPathStack;
+use Drupal\Core\Path\PathMatcher;
+use Drupal\Core\Session\AccountProxy;
+use Drupal\Core\State\State;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\EventDispatcher\Event;
-use Drupal\Core\Path\CurrentPathStack;
-use Drupal\Core\Config\ConfigFactory;
-use Drupal\Core\State\State;
-use Drupal\Core\Session\AccountProxy;
-use Drupal\Core\Path\PathMatcher;
 
 /**
  * Class AnonymousLoginSubscriber.
@@ -26,56 +20,74 @@ use Drupal\Core\Path\PathMatcher;
 class AnonymousLoginSubscriber implements EventSubscriberInterface {
 
   /**
-   * Drupal\Core\Path\CurrentPathStack definition.
+   * The current path for the current request.
    *
-   * @var Drupal\Core\Path\CurrentPathStack
+   * @var \Drupal\Core\Path\CurrentPathStack
    */
-  protected $path_current;
+  protected $pathCurrent;
 
   /**
-   * Drupal\Core\Config\ConfigFactory definition.
+   * The configuration object factory.
    *
-   * @var Drupal\Core\Config\ConfigFactory
+   * @var \Drupal\Core\Config\ConfigFactory
    */
-  protected $config_factory;
+  protected $configFactory;
 
   /**
-   * Drupal\Core\State\State definition.
+   * The state system.
    *
-   * @var Drupal\Core\State\State
+   * @var \Drupal\Core\State\State
    */
   protected $state;
 
   /**
-   * Drupal\Core\Session\AccountProxy definition.
+   * The instantiated account.
    *
-   * @var Drupal\Core\Session\AccountProxy
+   * @var \Drupal\Core\Session\AccountProxy
    */
-  protected $current_user;
+  protected $currentUser;
 
   /**
-   * Drupal\Core\Path\PathMatcher definition.
+   * The path matcher.
    *
-   * @var Drupal\Core\Path\PathMatcher
+   * @var \Drupal\Core\Path\PathMatcher
    */
-  protected $path_matcher;
+  protected $pathMatcher;
 
   /**
-   * Constructor.
+   * Paths textarea line break.
+   *
+   * @var string
+   */
+  protected $pathsLineBreak = "\n";
+
+  /**
+   * Constructor of a new AnonymousLoginSubscriber.
+   *
+   * @param \Drupal\Core\Path\CurrentPathStack $path_current
+   *   The current path for the current request.
+   * @param \Drupal\Core\Config\ConfigFactory $config_factory
+   *   The configuration object factory.
+   * @param \Drupal\Core\State\State $state
+   *   The state system.
+   * @param \Drupal\Core\Session\AccountProxy $current_user
+   *   The instantiated account.
+   * @param \Drupal\Core\Path\PathMatcher $path_matcher
+   *   The path matcher.
    */
   public function __construct(CurrentPathStack $path_current, ConfigFactory $config_factory, State $state, AccountProxy $current_user, PathMatcher $path_matcher) {
-    $this->path_current = $path_current;
-    $this->config_factory = $config_factory;
+    $this->pathCurrent = $path_current;
+    $this->configFactory = $config_factory;
     $this->state = $state;
-    $this->current_user = $current_user;
-    $this->path_matcher = $path_matcher;
+    $this->currentUser = $current_user;
+    $this->pathMatcher = $path_matcher;
   }
 
   /**
    * {@inheritdoc}
    */
-  static function getSubscribedEvents() {
-    $events[KernelEvents::REQUEST][] = array('redirect');
+  public static function getSubscribedEvents() {
+    $events[KernelEvents::REQUEST][] = ['redirect', 100];
     return $events;
   }
 
@@ -85,7 +97,8 @@ class AnonymousLoginSubscriber implements EventSubscriberInterface {
    * This method is called whenever the KernelEvents::REQUEST event is
    * dispatched.
    *
-   * @param GetResponseEvent $event
+   * @param \Symfony\Component\HttpKernel\Event\GetResponseEvent $event
+   *   The Event to process.
    */
   public function redirect(GetResponseEvent $event) {
     // Skip if maintenance mode is enabled.
@@ -104,49 +117,45 @@ class AnonymousLoginSubscriber implements EventSubscriberInterface {
     }
 
     // Skip if the user is not anonymous.
-    if (!$this->current_user->isAnonymous()) {
+    if (!$this->currentUser->isAnonymous()) {
       return;
     }
 
     // Determine the current path and alias.
     $current = [
-      'path' => $this->path_current->getPath(),
+      'path' => $this->pathCurrent->getPath(),
       'alias' => \Drupal::request()->getRequestUri(),
     ];
-  
+
     // Ignore PHP file requests.
     if (substr($current['path'], -4) == '.php') {
       return;
     }
 
     // Ignore the user login page.
-    if ($current['path'] == '/user/login') {
+    $login_page = ($this->configFactory->get('anonymous_login.settings')->get('login_path')) ? $this->configFactory->get('anonymous_login.settings')->get('login_path') : '/user/login';
+    if ($current['path'] == $login_page) {
       return;
     }
 
     // Convert the path to the front page token, if needed.
-    $current['path'] = ($current['path'] != '/') ? $current['path'] : '<front>';
+    $front_page = $this->configFactory->get('system.site')->get('page.front');
+    $current['path'] = ($current['path'] != $front_page) ? $current['path'] : '<front>';
 
     // Track if we should redirect.
     $redirect = FALSE;
 
     // Iterate the current path and alias.
     foreach ($current as &$check) {
-      // Remove the leading slash.
-      $check = substr($check, 1);
-
-      // Check if there is a trailer slash.
-      if (substr($check, -1) == '/') {
-        // Remove it.
-        $check = substr($check, 0, strlen($check) - 1);
-      }
+      // Remove the leading or trailer slash.
+      $check = $this->pathSlashCut($check);
 
       // Redirect if the path is a match for included paths.
-      if ($this->path_matcher->matchPath($check, implode("\n", $paths['include']))) {
+      if ($this->pathMatcher->matchPath($check, implode($this->pathsLineBreak, $paths['include']))) {
         $redirect = TRUE;
       }
       // Do not redirect if the path is a match for excluded paths.
-      if ($this->path_matcher->matchPath($check, implode("\n", $paths['exclude']))) {
+      if (!empty($paths['exclude']) && $this->pathMatcher->matchPath($check, implode($this->pathsLineBreak, $paths['exclude']))) {
         $redirect = FALSE;
         // Matching an excluded path is a hard-stop.
         break;
@@ -156,49 +165,89 @@ class AnonymousLoginSubscriber implements EventSubscriberInterface {
     // See if we're going to redirect.
     if ($redirect) {
       // See if we have a message to display.
-      if ($message = $this->config_factory->get('anonymous_login.settings')->get('message')) {
+      if ($message = $this->configFactory->get('anonymous_login.settings')->get('message')) {
         // @todo: translation?
-        // @todo: This does not show after the redirect..
         drupal_set_message($message);
       }
-            
+
       // Redirect to the login, keeping the requested alias as the destination.
-      $response = new RedirectResponse('/user/login?destination=' . $current['alias']);
-      $response->send();
-      exit();
+      $event->setResponse(new RedirectResponse($login_page . '?destination=' . $current['alias']));
     }
   }
 
   /**
-   * Fetch the paths that should be used when determining when to force
+   * Fetch the paths.
+   *
+   * That should be used when determining when to force
    * anonymous users to login.
-   * 
-   * @return
-   *   An array of paths, keyed by "include", paths that should force a 
+   *
+   * @return array
+   *   An array of paths, keyed by "include", paths that should force a
    *   login, and "exclude", paths that should be ignored.
-   */ 
-  public function paths() {  
+   */
+  public function paths() {
     // Initialize the paths array.
-    $paths = ['include' => [], 'exclude' => []];
-    
+    $paths = [
+      'include' => [],
+      'exclude' => [],
+    ];
+
     // Fetch the stored paths set in the admin settings.
-    if ($setting = $this->config_factory->get('anonymous_login.settings')->get('paths')) {
+    if ($setting = $this->configFactory->get('anonymous_login.settings')->get('paths')) {
+      // Set paths line break.
+      if (strpos($setting, "\r\n")) {
+        $this->pathsLineBreak = "\r\n";
+      }
+
       // Split by each newline.
-      $setting = explode("\n", $setting);
-  
+      $setting = explode($this->pathsLineBreak, $setting);
+
       // Iterate each path and determine if the path should be included
       // or excluded.
       foreach ($setting as $path) {
         if (substr($path, 0, 1) == '~') {
-          $paths['exclude'][] = substr($path, 1);
+          $path = substr($path, 1);
+          $path = $this->pathSlashCut($path);
+          $paths['exclude'][] = $path;
         }
         else {
+          $path = $this->pathSlashCut($path);
           $paths['include'][] = $path;
         }
       }
     }
-    
+
+    // Always exclude certain paths.
+    $paths['exclude'][] = 'user/reset/*';
+    $paths['exclude'][] = 'cron/*';
+
+    // Allow other modules to alter the paths.
+    \Drupal::moduleHandler()->alter('anonymous_login_paths', $paths);
+
     return $paths;
+  }
+
+  /**
+   * Cut leading and trailer slashes, if needed.
+   *
+   * @param string $path_string
+   *   String which contains page path.
+   *
+   * @return string
+   *   String which contains clean page path.
+   */
+  public function pathSlashCut($path_string) {
+    // Remove the leading slash.
+    if (substr($path_string, 0, 1) == '/') {
+      $path_string = substr($path_string, 1);
+    }
+
+    // Remove the trailer slash.
+    if (substr($path_string, -1) == '/') {
+      $path_string = substr($path_string, 0, strlen($path_string) - 1);
+    }
+
+    return $path_string;
   }
 
 }

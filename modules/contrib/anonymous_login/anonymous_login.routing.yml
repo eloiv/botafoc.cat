@@ -1,5 +1,5 @@
 anonymous_login.settings:
-  path: '/admin/config/user-interface/anonymous_login'
+  path: '/admin/config/user-interface/anonymous-login'
   defaults:
     _form: '\Drupal\anonymous_login\Form\AnonymousLoginSettings'
     _title: 'Anonymous login'
@@ -7,4 +7,3 @@ anonymous_login.settings:
     _permission: 'access administration pages'
   options:
     _admin_route: TRUE
-

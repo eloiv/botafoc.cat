@@ -82,6 +82,8 @@ class SelectConfigurationForm extends FormBase {
     $this->_move_all_config_files_directory('text_formats_editors');
     $this->_move_all_config_files_directory('user');
     $this->_move_all_config_files_directory('linkit');
+    $this->_move_all_config_files_directory('image_styles');
+    $this->_move_all_config_files_directory('date_format');
 
     if(!empty($_GET['langcodes'])){
       # Enabled multilanguage modules
@@ -90,6 +92,9 @@ class SelectConfigurationForm extends FormBase {
 
     if ($form_state->getValue('editor') == 1) {
       $this->_move_config_file('user.role.editor.yml', 'roles');
+      $build_info = $form_state->getBuildInfo();
+      $build_info['args'][0]['parameters']['editor'] = 1;
+      $form_state->setBuildInfo($build_info);
     }
     if ($form_state->getValue('administrator') == 1) {
       $this->_move_config_file('user.role.administrator.yml', 'roles');

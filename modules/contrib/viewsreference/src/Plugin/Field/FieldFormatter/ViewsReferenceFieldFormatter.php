@@ -25,7 +25,7 @@ class ViewsReferenceFieldFormatter extends FormatterBase {
   public static function defaultSettings() {
     $options = parent::defaultSettings();
 
-    $options['render_view'] = TRUE;
+    $options['plugin_types'] = array('block');
     return $options;
   }
 
@@ -34,11 +34,20 @@ class ViewsReferenceFieldFormatter extends FormatterBase {
    */
   public function settingsForm(array $form, FormStateInterface $form_state) {
     $form = parent::settingsForm($form, $form_state);
-    // We may decide on alternatives to rendering the view so get settings established
-    $form['render_view'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Render View'),
-      '#default_value' => $this->getSetting('render_view'),
+
+    $types = \Drupal\views\Views::pluginList();
+    $options = array();
+    foreach ($types as $key => $type) {
+      if ($type['type'] == 'display') {
+        $options[str_replace('display:', '', $key)] = $type['title']->render();
+      }
+    }
+
+    $form['plugin_types'] = [
+      '#type' => 'checkboxes',
+      '#options' => $options,
+      '#title' => $this->t('View display plugins to allow'),
+      '#default_value' => $this->getSetting('plugin_types'),
     ];
 
     return $form;
@@ -51,7 +60,13 @@ class ViewsReferenceFieldFormatter extends FormatterBase {
     $summary = array();
     $settings = $this->getSettings();
 
-    $summary[] = t('Render View: @view', array('@view' => $settings['render_view'] ? 'TRUE' : 'FALSE'));
+    $allowed = array();
+    foreach ($settings['plugin_types'] as $type) {
+      if ($type) {
+        $allowed[] = $type;
+      }
+    }
+    $summary[] = t('Allowed plugins: @view', array('@view' => implode(', ', $allowed)));
     return $summary;
   }
 
@@ -65,26 +80,33 @@ class ViewsReferenceFieldFormatter extends FormatterBase {
       $view_name = $item->getValue()['target_id'];
       $display_id = $item->getValue()['display_id'];
       $argument = $item->getValue()['argument'];
-      if ($argument != '') {
-        $view = views_embed_view($view_name, $display_id, $argument);
+      $title = $item->getValue()['title'];
+      $view = \Drupal\views\Views::getView($view_name);
+      // Someone may have deleted the View
+      if (!is_object($view)) {
+        continue;
       }
-      else {
-        $view = views_embed_view($view_name, $display_id);
-      }
+      $view->setDisplay($display_id);
+      $view->build($display_id);
+      $view->execute($display_id);
+      // We find the result to avoid rendering an empty view
+      $result = $view->result;
 
-      if ($this->getSetting('render_view')) {
-
-        $elements[$delta] = array(
-          '#markup' => render($view),
-          // todo what cache shall we use?
-          '#cache' => array(
-//              'tags' => $user->getCacheTags(),
-          ),
+      if ($title) {
+        $title = $view->getTitle();
+        $title_render_array = array(
+          '#markup' => '<div class="viewsreference-title">' . t('@title', ['@title'=> $title]) . '</div>'
         );
-
-        }
       }
 
+      if ($this->getSetting('plugin_types')) {
+        if ($title && !empty($result)) {
+          $elements[$delta]['title'] = $title_render_array;
+        }
+        $elements[$delta]['contents'] = views_embed_view($view_name, $display_id, $argument);
+      }
+
+    }
 
     return $elements;
   }

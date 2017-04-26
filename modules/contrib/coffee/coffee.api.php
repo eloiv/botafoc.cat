@@ -42,7 +42,7 @@ function hook_coffee_commands() {
         'label' => 'Pub: ' . $entity->label(),
         // You can also specify commands that if the user enters, this command
         // should show.
-        'command' => ':x' . ' ' . $entity->label(),
+        'command' => ':x ' . $entity->label(),
       );
     }
   }

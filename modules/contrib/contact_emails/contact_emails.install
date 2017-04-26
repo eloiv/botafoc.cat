@@ -1,0 +1,230 @@
+<?php
+
+/**
+ * @file
+ * Contact emails database table.
+ */
+
+use Drupal\Core\Database\Database;
+
+/**
+ * Implements hook_schema().
+ */
+function contact_emails_schema() {
+  $schema['contact_message_email_settings'] = [
+    'description' => 'Stores non-config settings for the contact message emails.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique person ID.',
+      ],
+      'contact_form' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Machine name of the contact form.',
+      ],
+      'subject' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Subject of the email.',
+      ],
+      'body' => [
+        'type' => 'text',
+        'length' => 9999,
+        'not null' => TRUE,
+        'description' => 'Body of the email.',
+      ],
+      'recipients' => [
+        'type' => 'text',
+        'length' => 9999,
+        'not null' => TRUE,
+        'description' => 'Recipients of the email.',
+      ],
+      'recipient_type' => [
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+        'default' => 'manual',
+        'description' => 'How to determine the submitter of the form.',
+      ],
+      'recipient_field' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The field to send to if recipient type is field.',
+      ],
+      'recipient_reference' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The field to send to if recipient type is reference.',
+      ],
+      'reply_to_type' => [
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => TRUE,
+        'default' => 'default',
+        'description' => 'The type of reply-to.',
+      ],
+      'reply_to_field' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The field to set the reply-to as if reply-to type is field.',
+      ],
+      'reply_to_email' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The email to set the reply-to as if reply-to type is email.',
+      ],
+      'disabled' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Whether or not this email is disabled.',
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'contact_form' => ['contact_form'],
+      'disabled' => ['disabled'],
+    ],
+  ];
+
+  return $schema;
+}
+
+/**
+ * Modify how the recipient type is stored.
+ */
+function contact_emails_update_8001(&$sandbox) {
+  $database = Database::getConnection();
+  $schema = $database->schema();
+
+  // Add the new recipient type field.
+  $recipient_type = [
+    'type' => 'varchar',
+    'length' => 20,
+    'not null' => TRUE,
+    'default' => 'manual',
+    'description' => 'How to determine the submitter of the form.',
+  ];
+  if (!$schema->fieldExists('contact_message_email_settings', 'recipient_type')) {
+    $schema->addField('contact_message_email_settings', 'recipient_type', $recipient_type);
+  }
+
+  // Add the new recipient field for when the recipient type is field.
+  $recipient_field = [
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'The field to send to if recipient type is field.',
+  ];
+  if (!$schema->fieldExists('contact_message_email_settings', 'recipient_field')) {
+    $schema->addField('contact_message_email_settings', 'recipient_field', $recipient_field);
+  }
+
+  // Get the form ids that are using the form submitter as the recipient.
+  $query = $database->select('contact_message_email_settings', 'c');
+  $query->addField('c', 'id');
+  $query->condition('c.recipient_is_submitter', '1');
+  $ids = $query->execute()->fetchCol();
+
+  // Update the database to store that in the recipient type field instead.
+  if ($ids) {
+    $query = $database->update('contact_message_email_settings');
+    $query->fields([
+      'recipient_type' => 'submitter',
+    ]);
+    $query->condition('id', $ids, 'IN');
+    $query->execute();
+  }
+
+  // Remove the recipient_is_submitter field.
+  if ($schema->fieldExists('contact_message_email_settings', 'recipient_is_submitter')) {
+    $schema->dropField('contact_message_email_settings', 'recipient_is_submitter');
+  }
+
+}
+
+/**
+ * Modify how the recipient type is stored.
+ */
+function contact_emails_update_8002(&$sandbox) {
+  $database = Database::getConnection();
+  $schema = $database->schema();
+
+  // Add the new recipient field for when the recipient type is field.
+  $recipient_reference = [
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'The field to send to if recipient type is reference.',
+  ];
+  if (!$schema->fieldExists('contact_message_email_settings', 'recipient_reference')) {
+    $schema->addField('contact_message_email_settings', 'recipient_reference', $recipient_reference);
+  }
+}
+
+/**
+ * Modify how the recipient type is stored.
+ */
+function contact_emails_update_8003(&$sandbox) {
+  $database = Database::getConnection();
+  $schema = $database->schema();
+
+  // Add the new recipient field for when the recipient type is field.
+  $reply_to_type = [
+    'type' => 'varchar',
+    'length' => 10,
+    'not null' => TRUE,
+    'default' => 'default',
+    'description' => 'The type of reply-to.',
+  ];
+  if (!$schema->fieldExists('contact_message_email_settings', 'reply_to_type')) {
+    $schema->addField('contact_message_email_settings', 'reply_to_type', $reply_to_type);
+
+    // Update the defaults for existing records.
+    $query = $database->update('contact_message_email_settings');
+    $query->fields([
+      'reply_to_type' => 'default',
+    ]);
+    $query->execute();
+  }
+
+  // Reply to field.
+  $reply_to_field = [
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'The field to set the reply-to as if reply-to type is field.',
+  ];
+  if (!$schema->fieldExists('contact_message_email_settings', 'reply_to_field')) {
+    $schema->addField('contact_message_email_settings', 'reply_to_field', $reply_to_field);
+  }
+
+  // Reply to email.
+  $reply_to_email = [
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'The email to set the reply-to as if reply-to type is email.',
+  ];
+  if (!$schema->fieldExists('contact_message_email_settings', 'reply_to_email')) {
+    $schema->addField('contact_message_email_settings', 'reply_to_email', $reply_to_email);
+  }
+}
