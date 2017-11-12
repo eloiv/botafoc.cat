@@ -1,9 +1,4 @@
 <?php
-/**
- * @file
- * Contains BackupMigrate\Drupal\Filter\DrupalUtils
- */
-
 
 namespace BackupMigrate\Drupal\Filter;
 use BackupMigrate\Core\Exception\BackupMigrateException;
@@ -32,7 +27,6 @@ class DrupalUtils extends PluginBase {
     $schema = array();
 
     // Backup configuration
-
     if ($params['operation'] == 'backup' || $params['operation'] == 'restore') {
       $schema['groups']['advanced'] = [
         'title' => 'Advanced Settings',

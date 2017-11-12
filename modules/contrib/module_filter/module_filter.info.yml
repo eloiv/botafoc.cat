@@ -6,8 +6,8 @@ package: Administration
 
 configure: module_filter.settings
 
-# Information added by Drupal.org packaging script on 2017-01-02
-version: '8.x-3.0'
+# Information added by Drupal.org packaging script on 2017-10-10
+version: '8.x-3.1'
 core: '8.x'
 project: 'module_filter'
-datestamp: 1483321446
+datestamp: 1507650850

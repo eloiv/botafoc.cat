@@ -7,6 +7,7 @@
 
 namespace Drupal\entity_clone\Tests;
 
+use Drupal\block\Entity\Block;
 use Drupal\simpletest\WebTestBase;
 
 /**
@@ -51,18 +52,17 @@ class EntityCloneBlockTest extends WebTestBase {
   }
 
   public function testBlockEntityClone() {
-    $edit = [
-      'settings[label]' => 'Test block for clone',
-      'id' => 'test_block_for_clone',
-    ];
-    $this->drupalPostForm("admin/structure/block/add/local_actions_block/classy", $edit, t('Save block'));
-
-    $blocks = \Drupal::entityTypeManager()
-      ->getStorage('block')
-      ->loadByProperties([
-        'id' => $edit['id'],
-      ]);
-    $block = reset($blocks);
+    $config = \Drupal::configFactory();
+    $block = Block::create([
+      'plugin' => 'test_block',
+      'region' => 'sidebar_first',
+      'id' => 'test_block',
+      'theme' => $config->get('system.theme')->get('default'),
+      'label' => $this->randomMachineName(8),
+      'visibility' => [],
+      'weight' => 0,
+    ]);
+    $block->save();
 
     $edit = [
       'id' => 'test_block_cloned',

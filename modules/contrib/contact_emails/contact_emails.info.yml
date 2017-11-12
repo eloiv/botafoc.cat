@@ -6,8 +6,8 @@ dependencies:
   - contact
   - contact_storage
 
-# Information added by Drupal.org packaging script on 2017-02-03
-version: '8.x-1.12'
+# Information added by Drupal.org packaging script on 2017-11-10
+version: '8.x-1.14'
 core: '8.x'
 project: 'contact_emails'
-datestamp: 1486114988
+datestamp: 1510299490

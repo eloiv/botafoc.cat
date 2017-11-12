@@ -225,12 +225,7 @@
  * For further information on the Theme and Render APIs, see:
  * - https://www.drupal.org/docs/8/theming
  * - https://www.drupal.org/developing/api/8/render
- * - https://www.drupal.org/node/722174
- * - https://www.drupal.org/node/933976
- * - https://www.drupal.org/node/930760
- *
- * @todo Check these links. Some are for Drupal 7, and might need updates for
- *   Drupal 8.
+ * - @link themeable Theme system overview @endlink.
  *
  * @section arrays Render arrays
  * The core structure of the Render API is the render array, which is a
@@ -369,7 +364,7 @@
  *   '#cache' => [
  *     'keys' => ['entity_view', 'node', $node->id()],
  *     'contexts' => ['languages'],
- *     'tags' => ['node:' . $node->id()],
+ *     'tags' => $node->getCacheTags(),
  *     'max-age' => Cache::PERMANENT,
  *   ],
  * @endcode
@@ -632,7 +627,7 @@ function hook_preprocess_HOOK(&$variables) {
 function hook_theme_suggestions_HOOK(array $variables) {
   $suggestions = [];
 
-  $suggestions[] = 'node__' . $variables['elements']['#langcode'];
+  $suggestions[] = 'hookname__' . $variables['elements']['#langcode'];
 
   return $suggestions;
 }
@@ -733,7 +728,7 @@ function hook_themes_installed($theme_list) {
 /**
  * Respond to themes being uninstalled.
  *
- * @param array $theme_list
+ * @param array $themes
  *   Array containing the names of the themes being uninstalled.
  *
  * @see \Drupal\Core\Extension\ThemeHandler::uninstall()

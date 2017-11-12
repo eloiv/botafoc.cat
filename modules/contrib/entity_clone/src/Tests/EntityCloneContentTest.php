@@ -7,6 +7,7 @@
 
 namespace Drupal\entity_clone\Tests;
 
+use Drupal\node\Entity\Node;
 use Drupal\node\Tests\NodeTestBase;
 
 /**
@@ -52,31 +53,19 @@ class EntityCloneContentTest extends NodeTestBase {
   }
 
   public function testContentEntityClone() {
-    $title_key = 'title[0][value]';
-    $body_key = 'body[0][value]';
-    // Create node to edit.
-
-    $edit = array();
-    $edit[$title_key] = $this->randomMachineName(8);
-    $edit[$body_key] = $this->randomMachineName(16);
-    $this->drupalPostForm('node/add/page', $edit, t('Save and publish'));
-
-    $nodes = \Drupal::entityTypeManager()
-      ->getStorage('node')
-      ->loadByProperties([
-        'title' => $edit[$title_key],
-        'body' => $edit[$body_key],
-      ]);
-    $node = reset($nodes);
-    $this->assertTrue($node, 'Test node for clone found in database.');
+    $node_title = $this->randomMachineName(8);
+    $node = Node::create([
+      'type' => 'page',
+      'title' => $node_title,
+    ]);
+    $node->save();
 
     $this->drupalPostForm('entity_clone/node/' . $node->id(), [], t('Clone'));
 
     $nodes = \Drupal::entityTypeManager()
       ->getStorage('node')
       ->loadByProperties([
-        'title' => $edit[$title_key] . ' - Cloned',
-        'body' => $edit[$body_key],
+        'title' => $node_title . ' - Cloned',
       ]);
     $node = reset($nodes);
     $this->assertTrue($node, 'Test node cloned found in database.');

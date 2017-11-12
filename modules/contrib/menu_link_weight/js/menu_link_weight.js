@@ -12,18 +12,18 @@
   Drupal.behaviors.menuLinkWeightAutomaticTitle = {
     attach: function (context) {
       var $context = $(context);
-      $context.find('.menu-link-form').each(function () {
+      $context.find('#menu-link-weight-wrapper').each(function () {
         var $this = $(this);
-        var $checkbox = $this.find('.js-form-item-menu-enabled input');
-        var $link_title = $context.find('.js-form-item-menu-title input');
+        var $checkbox = $this.parent().parent().find('#edit-menu-enabled');
+        var $link_title = $this.parent().parent().find('#edit-menu-title');
         // Try to find menu settings widget elements as well as a 'title' field
         // in the form, but play nicely with user permissions and form
         // alterations.
-        var $current_selection = $context.find('.menu-link-weight-link-current');
+        var $current_selection = $this.find('.menu-link-weight-link-current');
         var $title = $this.closest('form').find('.js-form-item-title-0-value input');
 
-        // If there is no title, take over the title of the link.
-        if ($current_selection.html() == '') {
+        // Take over the title of the link.
+        if ($link_title.val()) {
           $current_selection.html($link_title.val().substring(0, 30));
         }
         $link_title.on('keyup', function () {

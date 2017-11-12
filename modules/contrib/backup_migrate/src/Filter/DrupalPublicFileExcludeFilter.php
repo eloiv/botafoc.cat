@@ -1,12 +1,6 @@
 <?php
-/**
- * @file
- * Contains BackupMigrate\Drupal\Filter\DrupalPublicFileExcludeFilter
- */
-
 
 namespace BackupMigrate\Drupal\Filter;
-
 
 use BackupMigrate\Core\Config\Config;
 use BackupMigrate\Core\Filter\FileExcludeFilter;
@@ -37,7 +31,7 @@ class DrupalPublicFileExcludeFilter extends FileExcludeFilter {
     ];
 
     // @TODO: Allow modules to add their own excluded defaults.
-
     return new Config($config);
   }
+
 }

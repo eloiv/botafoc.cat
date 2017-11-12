@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\backup_migrate\Form\ScheduleDeleteForm.
- */
-
 namespace Drupal\backup_migrate\Form;
 
 use Drupal\Core\Entity\EntityConfirmFormBase;
@@ -15,6 +10,7 @@ use Drupal\Core\Url;
  * Builds the form to delete Schedule entities.
  */
 class ScheduleDeleteForm extends EntityConfirmFormBase {
+
   /**
    * {@inheritdoc}
    */

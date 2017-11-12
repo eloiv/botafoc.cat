@@ -10,7 +10,7 @@ use Drupal\migrate_drupal\Plugin\migrate\source\DrupalSqlBase;
  *
  * @MigrateSource(
  *   id = "d7_node_type",
- *   source_provider = "node"
+ *   source_module = "node"
  * )
  */
 class NodeType extends DrupalSqlBase {
@@ -53,6 +53,28 @@ class NodeType extends DrupalSqlBase {
       'locked' => $this->t('Flag.'),
       'orig_type' => $this->t('The original type.'),
       'teaser_length' => $this->t('Teaser length'),
+    ];
+    if ($this->moduleExists('comment')) {
+      $fields += $this->getCommentFields();
+    }
+    return $fields;
+  }
+
+  /**
+   * Returns the fields containing comment settings for each node type.
+   *
+   * @return string[]
+   *   An associative array of field descriptions, keyed by field.
+   */
+  protected function getCommentFields() {
+    return [
+      'comment' => $this->t('Default comment setting'),
+      'comment_default_mode' => $this->t('Default display mode'),
+      'comment_default_per_page' => $this->t('Default comments per page'),
+      'comment_anonymous' => $this->t('Anonymous commenting'),
+      'comment_subject_field' => $this->t('Comment subject field'),
+      'comment_preview' => $this->t('Preview comment'),
+      'comment_form_location' => $this->t('Location of comment submission form'),
     ];
   }
 
@@ -100,6 +122,19 @@ class NodeType extends DrupalSqlBase {
     }
 
     $row->setSourceProperty('display_submitted', $this->variableGet('node_submitted_' . $type, TRUE));
+
+    if ($menu_options = $this->variableGet('menu_options_' . $type, NULL)) {
+      $row->setSourceProperty('available_menus', $menu_options);
+    }
+    if ($parent = $this->variableGet('menu_parent_' . $type, NULL)) {
+      $row->setSourceProperty('parent', $parent . ':');
+    }
+
+    if ($this->moduleExists('comment')) {
+      foreach (array_keys($this->getCommentFields()) as $field) {
+        $row->setSourceProperty($field, $this->variableGet($field . '_' . $type, NULL));
+      }
+    }
 
     return parent::prepareRow($row);
   }

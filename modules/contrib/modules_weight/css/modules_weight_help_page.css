@@ -1,0 +1,25 @@
+summary {
+  text-transform: none !important;
+}
+
+table caption {
+  text-align: left;
+}
+
+table caption,
+div#aliases {
+  font-weight: bold;
+}
+
+table,
+div#aliases {
+  margin-top: 20px !important;
+}
+
+table thead th:nth-child(1) {
+  width: 20%;
+}
+
+div.item-list--comma-list {
+  padding-left: 12px;
+}

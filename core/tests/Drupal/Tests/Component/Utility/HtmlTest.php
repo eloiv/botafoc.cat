@@ -2,8 +2,11 @@
 
 namespace Drupal\Tests\Component\Utility;
 
+use Drupal\Component\Render\MarkupInterface;
+use Drupal\Component\Render\MarkupTrait;
 use Drupal\Component\Utility\Html;
-use Drupal\Tests\UnitTestCase;
+use Drupal\Component\Utility\Random;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests \Drupal\Component\Utility\Html.
@@ -12,7 +15,7 @@ use Drupal\Tests\UnitTestCase;
  *
  * @coversDefaultClass \Drupal\Component\Utility\Html
  */
-class HtmlTest extends UnitTestCase {
+class HtmlTest extends TestCase {
 
   /**
    * {@inheritdoc}
@@ -87,7 +90,12 @@ class HtmlTest extends UnitTestCase {
    */
   public function testHtmlClass() {
     // Verify Drupal coding standards are enforced.
-    $this->assertSame(Html::getClass('CLASS NAME_[Ü]'), 'class-name--ü', 'Enforce Drupal coding standards.');
+    $this->assertSame('class-name--ü', Html::getClass('CLASS NAME_[Ü]'), 'Enforce Drupal coding standards.');
+
+    // Test Html::getClass() handles Drupal\Component\Render\MarkupInterface
+    // input.
+    $markup = HtmlTestMarkup::create('CLASS_FROM_OBJECT');
+    $this->assertSame('class-from-object', Html::getClass($markup), 'Markup object is converted to CSS class.');
   }
 
   /**
@@ -347,11 +355,14 @@ class HtmlTest extends UnitTestCase {
   public function providerTestTransformRootRelativeUrlsToAbsolute() {
     $data = [];
 
+    // Random generator.
+    $random = new Random();
+
     // One random tag name.
-    $tag_name = strtolower($this->randomMachineName());
+    $tag_name = strtolower($random->name(8, TRUE));
 
     // A site installed either in the root of a domain or a subdirectory.
-    $base_paths = ['/', '/subdir/' . $this->randomMachineName() . '/'];
+    $base_paths = ['/', '/subdir/' . $random->name(8, TRUE) . '/'];
 
     foreach ($base_paths as $base_path) {
       // The only attribute that has more than just a URL as its value, is
@@ -388,5 +399,13 @@ class HtmlTest extends UnitTestCase {
       'scheme, host and path' => ['http://example.com/llama'],
     ];
   }
+
+}
+
+/**
+ * Marks an object's __toString() method as returning markup.
+ */
+class HtmlTestMarkup implements MarkupInterface {
+  use MarkupTrait;
 
 }

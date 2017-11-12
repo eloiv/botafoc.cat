@@ -1,14 +1,8 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\backup_migrate\Form\BackupMigrateQuickBackupForm.
- */
-
 namespace Drupal\backup_migrate\Form;
 
 use BackupMigrate\Drupal\Config\DrupalConfigHelper;
-use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -33,9 +27,13 @@ class BackupMigrateRestoreForm extends FormBase {
     $bam = backup_migrate_get_service_object();
 
     $form['backup_migrate_restore_upload'] = array(
-      '#title' => t('Upload a Backup File'),
+      '#title' => $this->t('Upload a Backup File'),
       '#type' => 'file',
-      '#description' => t("Upload a backup file created by Backup and Migrate. For other database or file backups please use another tool for import. Max file size: %size", array("%size" => format_size(file_upload_max_size()))),
+      '#description' => $this->t("Upload a backup file created by Backup
+      and Migrate. For other database or file backups please use another
+      tool for import. Max file size: %size",
+       array("%size" => format_size(file_upload_max_size()))
+      ),
     );
 
     $form['source_id'] = DrupalConfigHelper::getPluginSelector(
@@ -45,7 +43,7 @@ class BackupMigrateRestoreForm extends FormBase {
 
     $form['quickbackup']['submit'] = array(
       '#type' => 'submit',
-      '#value' => t('Restore now'),
+      '#value' => $this->t('Restore now'),
       '#weight' => 1,
     );
 
@@ -66,6 +64,5 @@ class BackupMigrateRestoreForm extends FormBase {
     $config = $form_state->getValues();
     backup_migrate_perform_restore($config['source_id'], 'upload', 'backup_migrate_restore_upload', $config);
   }
-
 
 }

@@ -1,13 +1,9 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\backup_migrate\Entity\Schedule.
- */
-
 namespace Drupal\backup_migrate\Entity;
 
 use BackupMigrate\Core\Config\Config;
+use BackupMigrate\Core\Destination\ListableDestinationInterface;
 use BackupMigrate\Core\Exception\BackupMigrateException;
 use BackupMigrate\Core\Main\BackupMigrateInterface;
 use Drupal\Core\Config\Entity\ConfigEntityBase;
@@ -40,6 +36,7 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  * )
  */
 class Schedule extends ConfigEntityBase {
+
   /**
    * The Schedule ID.
    *
@@ -83,12 +80,40 @@ class Schedule extends ConfigEntityBase {
           $config = $profile->get('config');
         }
 
-        \Drupal::logger('backup_migrate')->info("Running schedule %name", ['%name' => $this->get('label')]);
+        \Drupal::logger('backup_migrate')->info(
+             "Running schedule %name", ['%name' => $this->get('label')]);
         // TODO: Set the config (don't just use the defaults).
         // Run the backup.
+
+        // Set the schedule id in file metadata so that we can delete our own backups later.
+        // This requires the metadata writer to have knowledge of 'bam_scheduleid' which is
+        // a somewhat tight coupling that I'd like to unwind.
+        $config['metadata']['bam_scheduleid'] = $this->id;
         $bam->setConfig(new Config($config));
-        $bam->backup($this->get('source_id'), $this->get('destination_id'), $config);
-        drupal_set_message('Backup Complete.');
+
+        $bam->backup($this->get('source_id'), $this->get('destination_id'));
+
+        // Delete old backups
+        if ($keep = $this->get('keep')) {
+          $destination = $bam->destinations()->get($this->get('destination_id'));
+
+          // If the destination can be listed then get the list of files
+          if ($destination instanceof ListableDestinationInterface) {
+            // Get a list of files to delete. Don't attempt to delete more
+            // than 10 files in one go.
+            $delete = $destination->queryFiles(
+              ['bam_scheduleid' => $this->id],
+              'datestamp',
+              SORT_DESC,
+              10,
+              $keep
+            );
+
+            foreach ($delete as $file) {
+              $destination->deleteFile($file->getFullName());
+            }
+          }
+        }
       }
       catch (BackupMigrateException $e) {
         \Drupal::logger('backup_migrate')->error(
@@ -196,6 +221,7 @@ class Schedule extends ConfigEntityBase {
    * Get a backup period type given it's key.
    *
    * @param string $type
+   *
    * @return array
    */
   public static function getPeriodType($type) {

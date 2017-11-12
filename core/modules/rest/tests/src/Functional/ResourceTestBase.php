@@ -62,6 +62,8 @@ abstract class ResourceTestBase extends BrowserTestBase {
    * The REST Resource plugin ID can be calculated from this.
    *
    * @var string
+   *
+   * @see \Drupal\rest\Entity\RestResourceConfig::__construct()
    */
   protected static $resourceConfigId = NULL;
 
@@ -94,15 +96,12 @@ abstract class ResourceTestBase extends BrowserTestBase {
   public static $modules = ['rest'];
 
   /**
-   * @var \GuzzleHttp\ClientInterface
-   */
-  protected $httpClient;
-
-  /**
    * {@inheritdoc}
    */
   public function setUp() {
     parent::setUp();
+
+    $this->serializer = $this->container->get('serializer');
 
     // Ensure the anonymous user role has no permissions at all.
     $user_role = Role::load(RoleInterface::ANONYMOUS_ID);
@@ -135,10 +134,6 @@ abstract class ResourceTestBase extends BrowserTestBase {
     // Ensure there's a clean slate: delete all REST resource config entities.
     $this->resourceConfigStorage->delete($this->resourceConfigStorage->loadMultiple());
     $this->refreshTestStateAfterRestConfigChange();
-
-    // Set up a HTTP client that accepts relative URLs.
-    $this->httpClient = $this->container->get('http_client_factory')
-      ->fromOptions(['base_uri' => $this->baseUrl]);
   }
 
   /**
@@ -179,6 +174,21 @@ abstract class ResourceTestBase extends BrowserTestBase {
     // RestResourceConfig entities or 'rest.settings'. Ensure the test generates
     // routes using an up-to-date router.
     \Drupal::service('router.builder')->rebuildIfNeeded();
+  }
+
+  /**
+   * Return the expected error message.
+   *
+   * @param string $method
+   *   The HTTP method (GET, POST, PATCH, DELETE).
+   *
+   * @return string
+   *   The error string.
+   */
+  protected function getExpectedUnauthorizedAccessMessage($method) {
+    $resource_plugin_id = str_replace('.', ':', static::$resourceConfigId);
+    $permission = 'restful ' . strtolower($method) . ' ' . $resource_plugin_id;
+    return "The '$permission' permission is required.";
   }
 
   /**
@@ -238,29 +248,6 @@ abstract class ResourceTestBase extends BrowserTestBase {
    *   Request options to apply.
    */
   abstract protected function assertAuthenticationEdgeCases($method, Url $url, array $request_options);
-
-  /**
-   * Return the expected error message.
-   *
-   * @param string $method
-   *   The HTTP method (GET, POST, PATCH, DELETE).
-   *
-   * @return string
-   *    The error string.
-   */
-  abstract protected function getExpectedUnauthorizedAccessMessage($method);
-
-  /**
-   * Return the default expected error message if the
-   * bc_entity_resource_permissions is true.
-   *
-   * @param string $method
-   *   The HTTP method (GET, POST, PATCH, DELETE).
-   *
-   * @return string
-   *   The error string.
-   */
-  abstract protected function getExpectedBcUnauthorizedAccessMessage($method);
 
   /**
    * Initializes authentication.
@@ -330,6 +317,9 @@ abstract class ResourceTestBase extends BrowserTestBase {
    * 'http_errors = FALSE' request option, nor do we want them to have to
    * convert Drupal Url objects to strings.
    *
+   * We also don't want to follow redirects automatically, to ensure these tests
+   * are able to detect when redirects are added or removed.
+   *
    * @see \GuzzleHttp\ClientInterface::request()
    *
    * @param string $method
@@ -343,8 +333,10 @@ abstract class ResourceTestBase extends BrowserTestBase {
    */
   protected function request($method, Url $url, array $request_options) {
     $request_options[RequestOptions::HTTP_ERRORS] = FALSE;
+    $request_options[RequestOptions::ALLOW_REDIRECTS] = FALSE;
     $request_options = $this->decorateWithXdebugCookie($request_options);
-    return $this->httpClient->request($method, $url->toString(), $request_options);
+    $client = $this->getSession()->getDriver()->getClient()->getClient();
+    return $client->request($method, $url->setAbsolute(TRUE)->toString(), $request_options);
   }
 
   /**
@@ -359,12 +351,7 @@ abstract class ResourceTestBase extends BrowserTestBase {
    */
   protected function assertResourceResponse($expected_status_code, $expected_body, ResponseInterface $response) {
     $this->assertSame($expected_status_code, $response->getStatusCode());
-    if ($expected_status_code < 400) {
-      $this->assertSame([static::$mimeType], $response->getHeader('Content-Type'));
-    }
-    else {
-      $this->assertSame([static::$mimeType], $response->getHeader('Content-Type'));
-    }
+    $this->assertSame([static::$mimeType], $response->getHeader('Content-Type'));
     if ($expected_body !== FALSE) {
       $this->assertSame($expected_body, (string) $response->getBody());
     }

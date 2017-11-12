@@ -14,3 +14,12 @@ function menu_link_weight_install() {
   // menu_ui_form_node_form_alter().
   module_set_weight('menu_link_weight', 10);
 }
+
+/**
+ * Add default settings for menu_parent_form_selector.
+ */
+function menu_link_weight_update_8100() {
+  \Drupal::configFactory()->getEditable('menu_link_weight.settings')
+    ->set('menu_parent_form_selector', 'default')
+    ->save();
+}

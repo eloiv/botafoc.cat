@@ -25,31 +25,31 @@ function module_filter_form_system_modules_alter(&$form, FormStateInterface $for
     $form['filters']['text']['#default_value'] = $_GET['filter'];
   }
 
-  $status_defaults = array(
+  $status_defaults = [
     ((isset($_GET['enabled'])) ? $_GET['enabled'] : 1) ? 'enabled' : '',
     ((isset($_GET['disabled'])) ? $_GET['disabled'] : 1) ? 'disabled' : '',
     ((isset($_GET['unavailable'])) ? $_GET['unavailable'] : 1) ? 'unavailable' : '',
-  );
-  $form['filters']['status'] = array(
+  ];
+  $form['filters']['status'] = [
     '#type' => 'container',
-    '#attributes' => array(
-      'class' => array(
+    '#attributes' => [
+      'class' => [
         'module-filter-status',
-      ),
-    ),
-    'checkboxes' => array(
+      ],
+    ],
+    'checkboxes' => [
       '#type' => 'checkboxes',
       '#default_value' => array_filter($status_defaults),
-      '#options' => array(
+      '#options' => [
         'enabled' => t('Enabled'),
         'disabled' => t('Disabled'),
         'unavailable' => t('Unavailable'),
-      ),
-    ),
-  );
+      ],
+    ],
+  ];
 
   $state = \Drupal::state();
-  $recent = $state->get('module_filter.recent') ?: array();
+  $recent = $state->get('module_filter.recent') ?: [];
 
   // Remove recent items older than a week.
   $recent = array_filter($recent, function ($val) {
@@ -85,6 +85,17 @@ function module_filter_form_system_modules_alter(&$form, FormStateInterface $for
   }
 
   $form['#submit'][] = 'module_filter_system_modules_recent_enabled_submit';
+  $form['#submit'][] = 'module_filter_system_modules_redirect_submit';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function module_filter_form_system_modules_confirm_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $form['filters']['text'] = [
+    '#type' => 'value',
+    '#value' => isset($_GET['filter']) ? $_GET['filter'] : '',
+  ];
   $form['#submit'][] = 'module_filter_system_modules_redirect_submit';
 }
 
@@ -153,11 +164,24 @@ function module_filter_preprocess_system_modules_details(&$variables) {
  */
 function module_filter_system_modules_recent_enabled_submit($form, FormStateInterface $form_state) {
   $state = \Drupal::state();
-  $recent = $state->get('module_filter.recent') ?: array();
+  $recent = $state->get('module_filter.recent') ?: [];
 
-  foreach ($form_state->getValue('modules') as $package => $modules) {
+  // Drupal 8.3.0 simplified the module form structure which requires checking
+  // the version of Drupal and building the $modules array accordingly.
+  // @see https://www.drupal.org/node/2851653
+  $modules = [];
+  if (version_compare(\DRUPAL::VERSION, '8.3.0', '<')) {
+    foreach ($form_state->getValue('modules') as $package) {
+      $modules += $package;
+    }
+  }
+  else {
+    $modules = $form_state->getValue('modules');
+  }
+
+  foreach (Element::children($form['modules']) as $package) {
     foreach ($modules as $module => $details) {
-      if ($form['modules'][$package][$module]['enable']['#default_value'] != $details['enable']) {
+      if (isset($form['modules'][$package][$module]) && $form['modules'][$package][$module]['enable']['#default_value'] != $details['enable']) {
         $recent[$module] = REQUEST_TIME;
       }
     }
@@ -171,6 +195,8 @@ function module_filter_system_modules_recent_enabled_submit($form, FormStateInte
  */
 function module_filter_system_modules_redirect_submit($form, FormStateInterface $form_state) {
   if ($text = $form_state->getValue('text')) {
-    $form_state->setRedirect('system.modules_list', array('filter' => $text));
+    /** @var \Drupal\Core\Url $redirect */
+    $route_name = ($redirect = $form_state->getRedirect()) ? $redirect->getRouteName() : 'system.modules_list';
+    $form_state->setRedirect($route_name, ['filter' => $text]);
   }
 }

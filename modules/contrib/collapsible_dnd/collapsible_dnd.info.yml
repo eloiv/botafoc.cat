@@ -1,0 +1,10 @@
+name: Collapsible Drag 'n Drop.
+description: Make Drag 'n Drop collpasible.
+type: module
+# core: 8.x
+
+# Information added by Drupal.org packaging script on 2017-07-30
+version: '8.x-1.0-alpha1'
+core: '8.x'
+project: 'collapsible_dnd'
+datestamp: 1501453447

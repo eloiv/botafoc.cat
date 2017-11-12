@@ -322,7 +322,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
    * {@inheritdoc}
    */
   public function isRevisionTranslationAffected() {
-    $field_name = 'revision_translation_affected';
+    $field_name = $this->getEntityType()->getKey('revision_translation_affected');
     return $this->hasField($field_name) ? $this->get($field_name)->value : TRUE;
   }
 
@@ -330,7 +330,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
    * {@inheritdoc}
    */
   public function setRevisionTranslationAffected($affected) {
-    $field_name = 'revision_translation_affected';
+    $field_name = $this->getEntityType()->getKey('revision_translation_affected');
     if ($this->hasField($field_name)) {
       $this->set($field_name, $affected);
     }
@@ -830,6 +830,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
     $translation->translationInitialize = FALSE;
     $translation->typedData = NULL;
     $translation->loadedRevisionId = &$this->loadedRevisionId;
+    $translation->isDefaultRevision = &$this->isDefaultRevision;
 
     return $translation;
   }
@@ -915,7 +916,9 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
    * {@inheritdoc}
    */
   public function getTranslationLanguages($include_default = TRUE) {
-    $translations = array_filter($this->translations, function($translation) { return $translation['status']; });
+    $translations = array_filter($this->translations, function ($translation) {
+      return $translation['status'];
+    });
     unset($translations[LanguageInterface::LANGCODE_DEFAULT]);
 
     if ($include_default) {
@@ -1095,7 +1098,7 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
     // Ensure that the following properties are actually cloned by
     // overwriting the original references with ones pointing to copies of
     // them: enforceIsNew, newRevision, loadedRevisionId, fields, entityKeys,
-    // translatableEntityKeys and values.
+    // translatableEntityKeys, values and isDefaultRevision.
     $enforce_is_new = $this->enforceIsNew;
     $this->enforceIsNew = &$enforce_is_new;
 
@@ -1116,6 +1119,9 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
 
     $values = $this->values;
     $this->values = &$values;
+
+    $default_revision = $this->isDefaultRevision;
+    $this->isDefaultRevision = &$default_revision;
 
     foreach ($this->fields as $name => $fields_by_langcode) {
       $this->fields[$name] = [];
@@ -1281,20 +1287,15 @@ abstract class ContentEntityBase extends Entity implements \IteratorAggregate, C
    *   An array of field names.
    */
   protected function getFieldsToSkipFromTranslationChangesCheck() {
+    /** @var \Drupal\Core\Entity\ContentEntityTypeInterface $entity_type */
+    $entity_type = $this->getEntityType();
     // A list of known revision metadata fields which should be skipped from
     // the comparision.
-    // @todo Replace the hard coded list of revision metadata fields with the
-    // solution from https://www.drupal.org/node/2615016.
     $fields = [
-      $this->getEntityType()->getKey('revision'),
+      $entity_type->getKey('revision'),
       'revision_translation_affected',
-      'revision_uid',
-      'revision_user',
-      'revision_timestamp',
-      'revision_created',
-      'revision_log',
-      'revision_log_message',
     ];
+    $fields = array_merge($fields, array_values($entity_type->getRevisionMetadataKeys()));
 
     return $fields;
   }

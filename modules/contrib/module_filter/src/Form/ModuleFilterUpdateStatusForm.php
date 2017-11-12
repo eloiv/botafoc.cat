@@ -49,23 +49,23 @@ class ModuleFilterUpdateStatusForm extends FormBase {
       $form['filters']['text']['#default_value'] = $_GET['filter'];
     }
 
-    $form['filters']['radios'] = array(
+    $form['filters']['radios'] = [
       '#type' => 'container',
-      '#attributes' => array(
-        'class' => array(
+      '#attributes' => [
+        'class' => [
           'module-filter-status',
-        ),
-      ),
-      'show' => array(
+        ],
+      ],
+      'show' => [
         '#type' => 'radios',
         '#default_value' => 'all',
-        '#options' => array(
-          'all' => t('All'),
-          'updates' => t('Update available'),
-          'security' => t('Security update'),
-        ),
-      ),
-    );
+        '#options' => [
+          'all' => $this->t('All'),
+          'updates' => $this->t('Update available'),
+          'security' => $this->t('Security update'),
+        ],
+      ],
+    ];
 
     return $form;
   }

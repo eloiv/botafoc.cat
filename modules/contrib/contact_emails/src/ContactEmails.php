@@ -2,7 +2,6 @@
 
 namespace Drupal\contact_emails;
 
-use Drupal\Core\Database\Connection;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
@@ -17,13 +16,6 @@ use Drupal\field\FieldConfigInterface;
  * @package Drupal\contact_emails
  */
 class ContactEmails {
-
-  /**
-   * Drupal\Core\Database\Connection definition.
-   *
-   * @var \Drupal\Core\Database\Connection
-   */
-  protected $database;
 
   /**
    * Drupal\Core\Cache\CacheBackendInterface definition.
@@ -50,51 +42,13 @@ class ContactEmails {
    * Constructor.
    */
   public function __construct(
-    Connection $database,
     CacheBackendInterface $cache,
     EntityFieldManagerInterface $entity_field_manager,
     EntityTypeBundleInfoInterface $entity_type_bundle_info
   ) {
-    $this->database = $database;
     $this->cache = $cache;
     $this->entityFieldManager = $entity_field_manager;
     $this->entityTypeBundleInfo = $entity_type_bundle_info;
-  }
-
-  /**
-   * Get emails by contact form id.
-   *
-   * @param string $contact_form
-   *   The contact form machine name.
-   * @param bool $include_disabled
-   *   Whether to include disabled contact message emails or not.
-   *
-   * @return array
-   *   The rows from the contact message settings.
-   */
-  public function getEmailsByContactForm($contact_form, $include_disabled = FALSE) {
-    $query = $this->database->select('contact_message_email_settings', 'cm');
-    $query->fields('cm');
-    $query->condition('cm.contact_form', $contact_form);
-    if (!$include_disabled) {
-      $query->condition('cm.disabled', 0, '=');
-    }
-    $results = $query->execute()->fetchAllAssoc('id');
-    return $this->prepareResults($results);
-  }
-
-  /**
-   * Check if a contact form id has at least one email (including disabled).
-   *
-   * @param string $contact_form
-   *   The contact form machine name.
-   *
-   * @return bool
-   *   True if the contact form has at least 1 email.
-   */
-  public function contactFormHasEmails($contact_form) {
-    $contact_forms = $this->getContactFormsWithEmails();
-    return (in_array($contact_form, $contact_forms) ? TRUE : FALSE);
   }
 
   /**
@@ -114,79 +68,24 @@ class ContactEmails {
       $contact_forms = $cache->data;
     }
     else {
-      $query = $this->database->select('contact_message_email_settings', 'cm');
-      $query->fields('cm', ['contact_form']);
-      $query->groupBy('contact_form');
-      $contact_forms = $query->execute()->fetchCol();
+      /** @var \Drupal\contact_emails\ContactEmailStorageInterface $storage */
+      $storage = \Drupal::entityTypeManager()->getStorage('contact_email');
+      $emails = $storage->loadMultiple();
+
+      $contact_forms = [];
+
+      /** @var \Drupal\contact_emails\Entity\ContactEmailInterface $email */
+      foreach ($emails as $email) {
+        $formId = $email->get('contact_form')->target_id;
+        if (array_search($formId, $contact_forms) === FALSE) {
+          $contact_forms[] = $formId;
+        }
+      }
+
       $this->cache->set($cid, $contact_forms);
     }
+
     return $contact_forms;
-  }
-
-  /**
-   * Get an email by id.
-   *
-   * @param int $id
-   *   The email id.
-   *
-   * @return array
-   *   The single email row from the contact message settings.
-   */
-  public function getEmailById($id) {
-    $query = $this->database->select('contact_message_email_settings', 'cm');
-    $query->fields('cm');
-    $query->condition('cm.id', $id);
-    $results = $query->execute()->fetchAssoc();
-    return $this->prepareResult($results);
-  }
-
-  /**
-   * Prepare the results in a more useable format.
-   *
-   * @param array $results
-   *   The contact emails results.
-   *
-   * @return array
-   *   The prepared results.
-   */
-  protected function prepareResults($results) {
-    if (is_array($results)) {
-      foreach ($results as $key => $result) {
-        $results[$key] = $this->prepareResult($result);
-      }
-    }
-    return $results;
-  }
-
-  /**
-   * Prepare a single result.
-   *
-   * @param object $result
-   *   The contact emails result.
-   *
-   * @return object
-   *   The prepared result.
-   */
-  protected function prepareResult($result) {
-    if (isset($result->recipients) && $result->recipients) {
-
-      // Remove new lines and carriage returns.
-      $result->recipients = preg_replace("/\r|\n/", ",", $result->recipients);
-
-      // Replace semicolons in case instructions are ignored.
-      $result->recipients = str_replace(';', ',', $result->recipients);
-
-      // Break apart into array.
-      $result->recipients = explode(',', $result->recipients);
-
-      // Trim whitespace.
-      $result->recipients = array_map('trim', $result->recipients);
-
-      // Remove empty in case double commas.
-      array_filter($result->recipients);
-
-    }
-    return $result;
   }
 
   /**
@@ -220,6 +119,7 @@ class ContactEmails {
       return $field_definition instanceof FieldConfigInterface;
     });
     if ($fields) {
+      /** @var \Drupal\Core\Field\FieldDefinitionInterface $field */
       foreach ($fields as $field) {
         $type = $field->getType();
         if ($type == $field_type) {
@@ -235,6 +135,7 @@ class ContactEmails {
         }
       }
     }
+
     return $available_fields;
   }
 
@@ -282,6 +183,7 @@ class ContactEmails {
         });
 
         if ($bundle_fields) {
+          /** @var \Drupal\Core\Field\FieldDefinitionInterface $bundle_field */
           foreach ($bundle_fields as $bundle_field) {
             $type = $bundle_field->getType();
 

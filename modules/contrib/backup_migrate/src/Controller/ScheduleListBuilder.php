@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\backup_migrate\ScheduleListBuilder.
- */
-
 namespace Drupal\backup_migrate\Controller;
 
 use Drupal\backup_migrate\Entity\Schedule;
@@ -16,6 +11,7 @@ use Exception;
  * Provides a listing of Schedule entities.
  */
 class ScheduleListBuilder extends ConfigEntityListBuilder {
+
   /**
    * {@inheritdoc}
    */
@@ -32,8 +28,8 @@ class ScheduleListBuilder extends ConfigEntityListBuilder {
   /**
    * {@inheritdoc}
    *
-   * ScheduleListBuilder save implementation requires instance of Schedule
-   * Signature enforced by EntityListBuilder
+   * ScheduleListBuilder save implementation requires instance of Schedule.
+   * Signature enforced by EntityListBuilder.
    *
    * @throw InvalidArgumentException
    */

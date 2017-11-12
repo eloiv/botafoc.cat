@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\taxonomy\Plugin\views\argument_validator\TermName.
- */
-
 namespace Drupal\taxonomy_machine_name\Plugin\views\argument_validator;
 
 use Drupal\Core\Form\FormStateInterface;
@@ -33,7 +28,12 @@ class TermMachineName extends Entity {
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityManagerInterface $entity_manager) {
+  public function __construct(
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
+    EntityManagerInterface $entity_manager
+  ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $entity_manager);
     // Not handling exploding term names.
     $this->multipleCapable = FALSE;
@@ -45,7 +45,7 @@ class TermMachineName extends Entity {
    */
   protected function defineOptions() {
     $options = parent::defineOptions();
-    $options['transform'] = array('default' => TRUE);
+    $options['transform'] = ['default' => TRUE];
 
     return $options;
   }
@@ -56,11 +56,11 @@ class TermMachineName extends Entity {
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     parent::buildOptionsForm($form, $form_state);
 
-    $form['transform'] = array(
+    $form['transform'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Transform dashes in URL to underscores in term name filter values'),
       '#default_value' => $this->options['transform'],
-    );
+    ];
   }
 
   /**
@@ -70,7 +70,7 @@ class TermMachineName extends Entity {
     if ($this->options['transform']) {
       $argument = str_replace('-', '_', $argument);
     }
-    $properties = array('machine_name' => $argument);
+    $properties = ['machine_name' => $argument];
     if ($bundles = array_filter($this->options['bundles'])) {
       $properties['vid'] = $bundles;
     }

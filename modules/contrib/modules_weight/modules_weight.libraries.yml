@@ -1,0 +1,5 @@
+help_page:
+  version: 1.0.0
+  css:
+    theme:
+      css/modules_weight_help_page.css: {}

@@ -11,8 +11,9 @@ use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
+use Symfony\Component\Serializer\Exception\InvalidArgumentException;
 
 /**
  * Acts as intermediate request forwarder for resource plugins.
@@ -59,22 +60,20 @@ class RequestHandler implements ContainerAwareInterface, ContainerInjectionInter
    *   The response object.
    */
   public function handle(RouteMatchInterface $route_match, Request $request) {
-    $method = strtolower($request->getMethod());
-
     // Symfony is built to transparently map HEAD requests to a GET request. In
     // the case of the REST module's RequestHandler though, we essentially have
     // our own light-weight routing system on top of the Drupal/symfony routing
-    // system. So, we have to do the same as what the UrlMatcher does: map HEAD
-    // requests to the logic for GET. This also guarantees response headers for
-    // HEAD requests are identical to those for GET requests, because we just
-    // return a GET response. Response::prepare() will transform it to a HEAD
-    // response at the very last moment.
+    // system. So, we have to respect the decision that the routing system made:
+    // we look not at the request method, but at the route's method. All REST
+    // routes are guaranteed to have _method set.
+    // Response::prepare() will transform it to a HEAD response at the very last
+    // moment.
     // @see https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.4
     // @see \Symfony\Component\Routing\Matcher\UrlMatcher::matchCollection()
     // @see \Symfony\Component\HttpFoundation\Response::prepare()
-    if ($method === 'head') {
-      $method = 'get';
-    }
+    $method = strtolower($route_match->getRouteObject()->getMethods()[0]);
+    assert(count($route_match->getRouteObject()->getMethods()) === 1);
+
 
     $resource_config_id = $route_match->getRouteObject()->getDefault('_rest_resource_config');
     /** @var \Drupal\rest\RestResourceConfigInterface $resource_config */
@@ -89,29 +88,32 @@ class RequestHandler implements ContainerAwareInterface, ContainerInjectionInter
     if (!empty($received)) {
       $format = $request->getContentType();
 
-      // Only allow serialization formats that are explicitly configured. If no
-      // formats are configured allow all and hope that the serializer knows the
-      // format. If the serializer cannot handle it an exception will be thrown
-      // that bubbles up to the client.
-      $request_method = $request->getMethod();
-      if (in_array($format, $resource_config->getFormats($request_method))) {
-        $definition = $resource->getPluginDefinition();
-        try {
-          if (!empty($definition['serialization_class'])) {
-            $unserialized = $serializer->deserialize($received, $definition['serialization_class'], $format, ['request_method' => $method]);
-          }
-          // If the plugin does not specify a serialization class just decode
-          // the received data.
-          else {
-            $unserialized = $serializer->decode($received, $format, ['request_method' => $method]);
-          }
-        }
-        catch (UnexpectedValueException $e) {
-          throw new BadRequestHttpException($e->getMessage());
-        }
+      $definition = $resource->getPluginDefinition();
+
+      // First decode the request data. We can then determine if the
+      // serialized data was malformed.
+      try {
+        $unserialized = $serializer->decode($received, $format, ['request_method' => $method]);
       }
-      else {
-        throw new UnsupportedMediaTypeHttpException();
+      catch (UnexpectedValueException $e) {
+        // If an exception was thrown at this stage, there was a problem
+        // decoding the data. Throw a 400 http exception.
+        throw new BadRequestHttpException($e->getMessage());
+      }
+
+      // Then attempt to denormalize if there is a serialization class.
+      if (!empty($definition['serialization_class'])) {
+        try {
+          $unserialized = $serializer->denormalize($unserialized, $definition['serialization_class'], $format, ['request_method' => $method]);
+        }
+        // These two serialization exception types mean there was a problem
+        // with the structure of the decoded data and it's not valid.
+        catch (UnexpectedValueException $e) {
+          throw new UnprocessableEntityHttpException($e->getMessage());
+        }
+        catch (InvalidArgumentException $e) {
+          throw new UnprocessableEntityHttpException($e->getMessage());
+        }
       }
     }
 

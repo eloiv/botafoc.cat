@@ -24,7 +24,9 @@ projects[backup_migrate][subdir] = contrib
 projects[taxonomy_multidelete_terms][subdir] = contrib
 projects[diff][subdir] = contrib
 projects[menu_link_weight][subdir] = contrib
+projects[collapsible_dnd][subdir] = contrib
 projects[module_filter][subdir] = contrib
+projects[modules_weight][subdir] = contrib
 
 ; Fields
 projects[field_group][subdir] = contrib
@@ -38,6 +40,9 @@ projects[markup][subdir] = contrib
 projects[filefield_paths][subdir] = contrib
 projects[rdfui][version] = 1.x-dev
 projects[rdfui][subdir] = contrib
+projects[field_list_details][subdir] = contrib
+; projects[field_list_details][version] = 1.2
+; projects[field_list_details][patch][] = https://www.drupal.org/files/issues/field_list_details-_solved_thirdparty-2922869-0-D8.patch
 projects[date_popup][subdir] = contrib
 projects[date_popup][version] = 1.x-dev
 ; projects[date_popup][patch][] = https://www.drupal.org/files/issues/date_popup-datetime-2867210-0.patch
@@ -97,6 +102,7 @@ projects[taxonomy_machine_name][subdir] = contrib
 ; Multilanguage
 projects[lang_dropdown][subdir] = contrib
 projects[hidden_language][subdir] = contrib
+projects[language_html5_validation][subdir] = contrib
 
 ; Paths
 projects[pathauto][subdir] = contrib

@@ -24,18 +24,18 @@ class ModuleFilterSettingsForm extends ConfigFormBase {
     $config = $this->config('module_filter.settings');
     $form = parent::buildForm($form, $form_state);
 
-    $form['modules'] = array(
+    $form['modules'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Extend'),
       '#description' => $this->t('These are settings pertaining to the Extend pages of the site.'),
       '#collapsible' => FALSE,
-    );
-    $form['modules']['tabs'] = array(
+    ];
+    $form['modules']['tabs'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Enhance the Extend page with tabs'),
       '#description' => $this->t('Provides many enhancements to the Extend page including the use of tabs for packages.'),
       '#default_value' => $config->get('tabs'),
-    );
+    ];
 
     return $form;
   }

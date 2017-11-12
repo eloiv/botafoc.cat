@@ -1,0 +1,12 @@
+name: Contact Emails Test Mail Alter
+type: module
+description: Alters emailing to prevent send and output to browser for testing.
+# core: 8.x
+dependencies:
+  - contact_emails
+
+# Information added by Drupal.org packaging script on 2017-11-10
+version: '8.x-1.14'
+core: '8.x'
+project: 'contact_emails'
+datestamp: 1510299490

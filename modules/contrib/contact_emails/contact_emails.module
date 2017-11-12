@@ -37,11 +37,15 @@ function contact_emails_mail_alter(&$message) {
     'contact_page_mail',
   ];
   if (in_array($message['id'], $contact_form_ids)) {
+    /** @var \Drupal\contact\MessageInterface $contact_message */
     if ($contact_message = $message['params']['contact_message']) {
       $contact_form = $contact_message->getContactForm();
       $contact_form_id = $contact_form->id();
-      $contact_emails = \Drupal::service('contact_emails.helper');
-      if ($contact_emails->contactFormHasEmails($contact_form_id)) {
+
+      /** @var \Drupal\contact_emails\ContactEmailStorageInterface $storage */
+      $storage = \Drupal::entityTypeManager()->getStorage('contact_email');
+
+      if ($storage->hasContactEmails($contact_form_id)) {
 
         // Disable sending of default mails if we have at least one email
         // set by contact_emails (regardless of whether or not it is a disabled
@@ -68,10 +72,12 @@ function contact_emails_form_contact_form_edit_form_alter(&$form, FormStateInter
   if (isset($form['id']['#default_value'])) {
     $contact_form_id = $form['id']['#default_value'];
 
+    /** @var \Drupal\contact_emails\ContactEmailStorageInterface $storage */
+    $storage = \Drupal::entityTypeManager()->getStorage('contact_email');
+
     // Disable default contact email if we have at least one contact_emails
     // email added.
-    $contact_emails = \Drupal::service('contact_emails.helper');
-    if ($contact_emails->contactFormHasEmails($contact_form_id)) {
+    if ($storage->hasContactEmails($contact_form_id)) {
       if (isset($form['recipients'])) {
         $form['recipients']['#type'] = 'hidden';
       }
@@ -81,16 +87,19 @@ function contact_emails_form_contact_form_edit_form_alter(&$form, FormStateInter
       $form['manage_emails'] = [
         '#type' => 'link',
         '#title' => t('Emails for this form are managed here.'),
-        '#url' => Url::fromRoute("contact_emails.contact_emails_controller_list", ['contact_form' => $contact_form_id]),
+        '#url' => Url::fromRoute("entity.contact_email.collection", [
+          'contact_form' => $contact_form_id,
+        ]),
         '#weight' => 100,
       ];
     }
     else {
-
       $form['manage_emails'] = [
         '#type' => 'link',
         '#title' => t('Set up multiple emails for this form.'),
-        '#url' => Url::fromRoute("contact_emails.contact_emails_controller_list", ['contact_form' => $contact_form_id]),
+        '#url' => Url::fromRoute("entity.contact_email.collection", [
+          'contact_form' => $contact_form_id,
+        ]),
         '#weight' => 100,
       ];
     }
@@ -101,12 +110,15 @@ function contact_emails_form_contact_form_edit_form_alter(&$form, FormStateInter
  * Implements hook_entity_operation_alter().
  */
 function contact_emails_entity_operation_alter(array &$operations, $entity) {
+  /** @var EntityInterface $entity */
   if ($entity->getEntityTypeId() == 'contact_form') {
-    if (\Drupal::service('router.route_provider')->getRouteByName("contact_emails.contact_emails_controller_list")) {
+    if (\Drupal::service('router.route_provider')->getRouteByName("entity.contact_email.collection")) {
       if ($entity->id() != 'personal') {
         $operations['email_settings'] = [
           'title' => t('Manage emails'),
-          'url' => Url::fromRoute("contact_emails.contact_emails_controller_list", ['contact_form' => $entity->id()]),
+          'url' => Url::fromRoute("entity.contact_email.collection", [
+            'contact_form' => $entity->id(),
+          ]),
           'weight' => 50,
         ];
       }

@@ -176,8 +176,9 @@ function botafoc_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_s
           ':input[name="check"]' => array('checked' => FALSE),
         ),
       );
-      //$form['actions']['submit']['#submit'][] = 'editor_user_save';
-      $form['actions']['submit']['#validate'][] = 'editor_user_save';
+
+      $form['#submit'][] = 'editor_user_save';
+      $form['actions']['submit']['#validate'][] = 'editor_user_validate';
     }
 
     $form['regional_settings']['#type'] = 'details';
@@ -188,16 +189,36 @@ function botafoc_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_s
 }
 
 function editor_user_save($form, Drupal\Core\Form\FormStateInterface $form_state) {
-  if (!empty($form_state->getValue('editor'))) {
+  if (!empty($form_state->getValue('check'))) {
     $editor_account = $form_state->getValue('editor');
-    $user_editor = \Drupal\user\Entity\User::create();
-    // Mandatory.
-    $user_editor->setUsername($editor_account['name']);
-    $user_editor->setPassword($editor_account['pass']);
-    $user_editor->setEmail($editor_account['mail']);
-    $user_editor->enforceIsNew();
-    $user_editor->addRole('editor');
-    $user_editor->activate();
-    $user_editor->save();
+    if(!empty($editor_account['name']) && !empty($editor_account['pass'])) {
+      $user_editor = \Drupal\user\Entity\User::create();
+      // Mandatory.
+      $user_editor->setUsername($editor_account['name']);
+      $user_editor->setPassword($editor_account['pass']);
+      $user_editor->setEmail($editor_account['mail']);
+      $user_editor->enforceIsNew();
+      $user_editor->addRole('editor');
+      $user_editor->activate();
+      $user_editor->save();
+    }
+  }
+}
+
+function editor_user_validate($form, Drupal\Core\Form\FormStateInterface $form_state) {
+
+  if (!empty($form_state->getValue('check'))) {
+    $editor_account = $form_state->getValue('editor');
+
+    if (empty($editor_account['name'])) {
+      $form_state->setErrorByName('editor][name', t('The Editor username field is required.'));
+    }
+    if (empty($editor_account['pass'])) {
+      $form_state->setErrorByName('editor][pass][pass1', t('Editor password field is required.'));
+      $form_state->setErrorByName('editor][pass][pass2', t('Editor password field is required.'));
+    }
+    if (empty($editor_account['pass'])) {
+      $form_state->setErrorByName('editor][mail', t('Editor email field is required.'));
+    }
   }
 }

@@ -83,3 +83,44 @@ body.path-user-login {
   padding-left: 2em;
   border: solid 1px #CCCCCC;
 }
+
+.layout-actions #edit-footer,
+.layout-actions #edit-actions {
+    width: auto;
+    display: inline-block;
+}
+.layout-actions #edit-footer {
+  margin-right: 1em;
+  margin-top: 1em;
+}
+
+#edit-status-wrapper,
+#edit-delete {
+  border: 1px solid #a6a6a6;
+  font-size: 0.875rem;
+  padding: 1px 21px 3px;
+}
+.layout-region-node-secondary-top #edit-status-wrapper {
+  padding: 1px 21px 4px;
+}
+
+#edit-status-wrapper .form-item {
+  margin: 0px;
+}
+
+#edit-status-wrapper input {
+  position: relative;
+  top: 3px;
+}
+#edit-status-wrapper label.option {
+  font-weight: 600;
+}
+
+#edit-delete {
+  padding: 4px 21px 4px;
+  margin-left: 0px;
+}
+
+#edit-title-wrapper input {
+  width: 100%;
+}

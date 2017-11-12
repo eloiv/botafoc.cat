@@ -1,9 +1,4 @@
 <?php
-/**
- * @file
- * Contains BackupMigrate\Drupal\Config\DrupalConfigHelper
- */
-
 
 namespace BackupMigrate\Drupal\Config;
 
@@ -12,7 +7,6 @@ use BackupMigrate\Core\Main\BackupMigrateInterface;
 use BackupMigrate\Core\Plugin\PluginManagerInterface;
 use Drupal\backup_migrate\Entity\SettingsProfile;
 use Drupal\Core\Form\FormStateInterface;
-
 
 /**
  * Class DrupalConfigHelper
@@ -28,6 +22,7 @@ class DrupalConfigHelper {
    *  'backup', 'restore', or 'initialize' depending on the operation being configured for.
    * @param array $parents
    *  The form parents array.
+   *
    * @return array
    */
   static public function buildAllPluginsForm(PluginManagerInterface $plugins, $operation, $parents = []) {
@@ -50,6 +45,7 @@ class DrupalConfigHelper {
    * @param string $operation
    *  'backup', 'restore', or 'initialize' depending on the operation being configured for.
    * @param array $parents
+   *
    * @return array
    */
   static public function buildPluginForm($plugin, $operation, $parents = ['config']) {
@@ -58,7 +54,6 @@ class DrupalConfigHelper {
 
     return DrupalConfigHelper::buildFormFromSchema($schema, $config, $parents);
   }
-
 
   /**
    * @param array $schema
@@ -106,7 +101,7 @@ class DrupalConfigHelper {
     }
 
     // Add each of the fields.
-    if (isset($schema['groups'])) {
+    if (isset($schema['fields'])) {
       foreach ($schema['fields'] as $field_key => $item) {
         $form_item = [];
         $value = $config->get($field_key);
@@ -209,9 +204,10 @@ class DrupalConfigHelper {
    *
    * @param \BackupMigrate\Core\Config\ConfigurableInterface[]|\BackupMigrate\Core\Plugin\PluginManagerInterface $plugins
    * @param $title
+   * @param null $default_value
    * @return array
    */
-  public static function getPluginSelector(PluginManagerInterface $plugins, $title) {
+  public static function getPluginSelector(PluginManagerInterface $plugins, $title, $default_value = NULL) {
     $options = [];
     foreach ($plugins->getAll() as $key => $plugin) {
       $options[$key] = $plugin->confGet('name', $key);
@@ -220,6 +216,7 @@ class DrupalConfigHelper {
       '#type' => 'select',
       '#title' => $title,
       '#options' => $options,
+      '#default_value' => $default_value
     ];
   }
 
@@ -228,10 +225,11 @@ class DrupalConfigHelper {
    *
    * @param \BackupMigrate\Core\Main\BackupMigrateInterface $bam
    * @param $title
+   * @param null $default_value
    * @return array
    */
-  public static function getSourceSelector(BackupMigrateInterface $bam, $title) {
-    return DrupalConfigHelper::getPluginSelector($bam->sources(), $title);
+  public static function getSourceSelector(BackupMigrateInterface $bam, $title, $default_value = NULL) {
+    return DrupalConfigHelper::getPluginSelector($bam->sources(), $title, $default_value);
   }
 
   /**
@@ -239,10 +237,11 @@ class DrupalConfigHelper {
    *
    * @param \BackupMigrate\Core\Main\BackupMigrateInterface $bam
    * @param $title
+   * @param null $default_value
    * @return array
    */
-  public static function getDestinationSelector(BackupMigrateInterface $bam, $title) {
-    return DrupalConfigHelper::getPluginSelector($bam->destinations(), $title);
+  public static function getDestinationSelector(BackupMigrateInterface $bam, $title, $default_value = NULL) {
+    return DrupalConfigHelper::getPluginSelector($bam->destinations(), $title, $default_value);
   }
 
 

@@ -56,7 +56,7 @@ class EntityCloneSearchPageTest extends WebTestBase {
       'id' => 'test_search_page_for_clone',
       'path' => 'test_search_page_for_clone_url',
     ];
-    $this->drupalPostForm("/admin/config/search/pages/add/node_search", $edit, t('Add search page'));
+    $this->drupalPostForm("/admin/config/search/pages/add/node_search", $edit, t('Save'));
 
     $search_pages = \Drupal::entityTypeManager()
       ->getStorage('search_page')

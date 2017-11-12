@@ -1,18 +1,15 @@
 <?php
 
-/**
- * @file
- * Taxonomy Machine Name module file.
- */
-
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\taxonomy\Entity\Term;
+use Drupal\taxonomy\TermInterface;
 
 /**
  * Implements hook_entity_base_field_info().
  *
  * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
+ *
  * @return array
  */
 function taxonomy_machine_name_entity_base_field_info(\Drupal\Core\Entity\EntityTypeInterface $entity_type) {
@@ -41,7 +38,7 @@ function taxonomy_machine_name_form_taxonomy_overview_terms_alter(
   $form_id
 ) {
   if (isset($form['terms']['#header'])) {
-    array_splice($form['terms']['#header'], 1, 0, array(t('Machine name')));
+    array_splice($form['terms']['#header'], 1, 0, [t('Machine name')]);
   }
 
   $position = FALSE;
@@ -65,18 +62,19 @@ function taxonomy_machine_name_form_taxonomy_overview_terms_alter(
       }
     }
 
-    $column = array(
-      '#type'  => 'link',
+    $column = [
+      '#type' => 'link',
       '#title' => $machine_name,
-      '#url'   => $form['terms'][$key]['term']['#url'],
-    );
+      '#url' => $form['terms'][$key]['term']['#url'],
+    ];
 
-    array_splice($form['terms'][$key], $position + 1, 0, array('machine_name' => $column));
+    array_splice($form['terms'][$key], $position + 1, 0, ['machine_name' => $column]);
   }
 }
 
 /**
  * Implements hook_form_FORM_ID_alter().
+ *
  * @param array $form
  * @param \Drupal\Core\Form\FormStateInterface $form_state
  * @param string $form_id
@@ -88,31 +86,30 @@ function taxonomy_machine_name_form_taxonomy_term_form_alter(
 ) {
   // Only if 'name' field is enable in the current 'form display'.
   if (isset($form['name'])) {
+    $default_value = '';
+
     /** @var Term $term */
     $term = $form_state->getFormObject()->getEntity();
     if ($term->hasField('machine_name')) {
       if (!empty($term_machine_name = $term->get('machine_name')->first())) {
         $default_value = $term_machine_name->getValue()['value'];
       }
-      else {
-        $name = $term->get('name')->first()->getValue()['value'];
+      elseif (!empty($term_machine_name_value = $term->get('name')->first()->getValue())) {
+        $name = $term_machine_name_value['value'];
         $default_value = taxonomy_machine_name_clean_name($name);
       }
     }
-    else {
-      $default_value = '';
-    }
 
-    $form['machine_name'] = array(
-      '#type'          => 'machine_name',
+    $form['machine_name'] = [
+      '#type' => 'machine_name',
       '#default_value' => $default_value,
-      '#maxlength'     => 255,
-      '#machine_name'  => array(
+      '#maxlength' => 255,
+      '#machine_name' => [
         'exists' => 'taxonomy_term_machine_name_load',
-        'source' => array('name', 'widget', 0, 'value'),
-      ),
-      '#weight'        => $form['name']['#weight'] + 0.01,
-    );
+        'source' => ['name', 'widget', 0, 'value'],
+      ],
+      '#weight' => $form['name']['#weight'] + 0.01,
+    ];
 
     $form['#validate'][] = 'taxonomy_machine_name_form_validate';
   }
@@ -129,7 +126,7 @@ function taxonomy_machine_name_form_validate($form, \Drupal\Core\Form\FormStateI
   if ($form_state->hasValue('machine_name')) {
     // Do not allow machine names to conflict with taxonomy path arguments.
     $machine_name = $form_state->getValue('machine_name');
-    $disallowed = array('add', 'list', 'delete', 'update');
+    $disallowed = ['add', 'list', 'delete', 'update'];
 
     if (in_array($machine_name, $disallowed)) {
       $form_state->setError(
@@ -167,10 +164,10 @@ function taxonomy_term_machine_name_load($machine_name, $vocabulary, FormStateIn
     $vocabulary = $term->getVocabularyId();
   }
 
-  $conditions = array(
+  $conditions = [
     'machine_name' => $machine_name,
-    'vid'          => $vocabulary,
-  );
+    'vid' => $vocabulary,
+  ];
 
   if ($terms = entity_load_multiple_by_properties('taxonomy_term', $conditions)) {
     if (isset($term) && key($terms) == $term->id()) {
@@ -220,34 +217,17 @@ function taxonomy_machine_name_taxonomy_term_presave(Drupal\Core\Entity\EntityIn
  *   Cleaned name.
  */
 function taxonomy_machine_name_clean_name($name, $force = FALSE) {
-  if (!preg_match('/^[a-z0-9\_]+$/i', $name) || $force) {
-    // Not yet available under Drupal 8.
-    /*if (\Drupal::moduleHandler()->moduleExists('pathauto')) {
-      // Better sluggify code including transliteration.
-      module_load_include('inc', 'pathauto');
-
-      $machine_name = pathauto_cleanstring(str_replace('_', variable_get('pathauto_separator', '-'), $name));
-      $machine_name = str_replace(variable_get('pathauto_separator', '-'), '_', $machine_name);
-    }
-    else*/
-    if (\Drupal::moduleHandler()->moduleExists('token')) {
-      // Avoid duplicate code.
-      module_load_include('module', 'token');
-
-      $machine_name = token_clean_token_name($name);
-      $machine_name = str_replace('-', '_', Unicode::strtolower($machine_name));
-    }
-    else {
-      // Final fallback.
-      $machine_name = Unicode::strtolower(str_replace('_', '-', $name));
-      $machine_name = preg_replace('/([^a-z0-9\_]+)/', '_', $machine_name);
-    }
-
-    // Remove any trailing underscore.
-    $machine_name = trim($machine_name, '_');
+  if (!preg_match('/^[a-z0-9\_]+$/', $name) || $force) {
+    $unknown_character = '_';
+    // Transliterate and sanitize the destination filename.
+    $langcode = \Drupal::languageManager()->getCurrentLanguage()->getId();
+    $machine_name = \Drupal::transliteration()->transliterate($name, $langcode, $unknown_character);
+    $machine_name = trim(Unicode::strtolower($machine_name));
+    $machine_name = trim(preg_replace('/[^a-z0-9\_]+/', $unknown_character, $machine_name), $unknown_character);
   }
   else {
-    $machine_name = trim(Unicode::strtolower($name));
+    // Nothing to do.
+    $machine_name = $name;
   }
 
   \Drupal::moduleHandler()->alter('taxonomy_machine_name_clean_name', $machine_name, $name, $force);
@@ -283,4 +263,57 @@ function taxonomy_machine_name_uniquify(&$machine_name, Term $term) {
       ) . $unique_suffix;
     $i++;
   } while (taxonomy_term_machine_name_load($machine_name, $term->getVocabularyId()));
+}
+
+/**
+ * Update term with machine name.
+ *
+ * @param \Drupal\taxonomy\TermInterface $term
+ *
+ * @return \Drupal\taxonomy\TermInterface
+ */
+function taxonomy_machine_name_update_term(TermInterface $term) {
+  if (empty($term->get('machine_name')->first())) {
+    $name = $term->get('name')->first()->getValue()['value'];
+    $term->machine_name = taxonomy_machine_name_clean_name($name);
+    $term->save();
+  }
+  return $term;
+}
+
+/**
+ * Implements hook_token_info_alter().
+ */
+function taxonomy_machine_name_token_info_alter(&$info) {
+  $info['tokens']['term']['machine_name'] = array(
+    'name' => t('Machine name'),
+    'description' => t('The machine name of the taxonomy term.'),
+  );
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function taxonomy_machine_name_tokens(
+  $type,
+  $tokens,
+  array $data,
+  array $options,
+  \Drupal\Core\Render\BubbleableMetadata $bubbleable_metadata
+) {
+  $replacements = [];
+
+  if ($type == 'term' && !empty($data['term'])) {
+    $term = $data['term'];
+
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'machine_name':
+          $replacements[$original] = $term->machine_name->value;
+          break;
+      }
+    }
+  }
+
+  return $replacements;
 }

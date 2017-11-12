@@ -10,14 +10,14 @@ use Drupal\datetime\Plugin\views\filter\Date;
  */
 class DatetimePopup extends Date {
 
+  use DatePopupTrait;
+
   /**
    * {@inheritdoc}
    */
   public function buildExposedForm(&$form, FormStateInterface $form_state) {
     parent::buildExposedForm($form, $form_state);
-    if (!empty($this->options['expose']['identifier'])) {
-      $form[$this->options['expose']['identifier']]['#type'] = 'date';
-    }
+    $this->applyDatePopupToForm($form);
   }
 
 }

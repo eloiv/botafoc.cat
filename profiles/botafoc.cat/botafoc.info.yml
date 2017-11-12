@@ -56,6 +56,8 @@ dependencies:
   - diff
   - menu_link_weight
   - module_filter
+  - modules_weight
+  - collapsible_dnd
 
   # Fields
   - field_group
@@ -72,6 +74,7 @@ dependencies:
   - multiple_selects
   - chosen
   - chosen_field
+  - field_list_details
 
   # Text formats and Editors
   - editor_file
@@ -90,6 +93,7 @@ dependencies:
 
   # Language
   # Enabled modules if exist two or more language
+  - language_html5_validation
 
   # UX
   - extlink

@@ -1,11 +1,6 @@
 <?php
 
 /**
- * @file
- * Hooks provided by the Taxonomy Machine Name module.
- */
-
-/**
  * @addtogroup hooks
  * @{
  */
