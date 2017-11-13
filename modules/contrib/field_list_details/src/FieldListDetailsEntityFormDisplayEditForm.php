@@ -2,6 +2,7 @@
 
 namespace Drupal\field_list_details;
 
+use Drupal\Core\Config\Entity\ThirdPartySettingsInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\field_ui\Form\EntityFormDisplayEditForm;
@@ -17,14 +18,18 @@ class FieldListDetailsEntityFormDisplayEditForm extends EntityFormDisplayEditFor
    * {@inheritdoc}
    */
   protected function buildFieldRow(FieldDefinitionInterface $field_definition, array $form, FormStateInterface $form_state) {
-    $field_row = parent::buildFieldRow($field_definition, $form, $form_state);
+    $row = parent::buildFieldRow($field_definition, $form, $form_state);
 
-    // Remove plain_text field label and add back as part of details template
-    unset($field_row['human_name']['#plain_text']);
+    if (!$field_definition instanceof ThirdPartySettingsInterface) {
+      return $row;
+    }
+
+    // Remove plain_text field label and add back as part of details template.
+    unset($row['human_name']['#plain_text']);
 
     $collection = new FieldListDetailsCollection($field_definition);
 
-    $field_row['human_name'] =  [
+    $row['human_name'] = [
       '#theme' => 'field_list_details_list',
       '#label' => $field_definition->getLabel(),
       '#details' => $collection->getDetails(),
@@ -33,7 +38,7 @@ class FieldListDetailsEntityFormDisplayEditForm extends EntityFormDisplayEditFor
       ],
     ];
 
-    return $field_row;
+    return $row;
   }
 
 }

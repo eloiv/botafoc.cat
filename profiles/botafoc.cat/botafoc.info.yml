@@ -93,7 +93,7 @@ dependencies:
 
   # Language
   # Enabled modules if exist two or more language
-  - language_html5_validation
+  # - language_html5_validation
 
   # UX
   - extlink

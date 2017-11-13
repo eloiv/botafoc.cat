@@ -2,6 +2,7 @@
 
 namespace Drupal\field_list_details;
 
+use Drupal\Core\Config\Entity\ThirdPartySettingsInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\field_ui\FieldConfigListBuilder;
 
@@ -17,6 +18,10 @@ class FieldListDetailsFieldConfigListBuilder extends FieldConfigListBuilder {
    */
   public function buildRow(EntityInterface $field_config) {
     $row = parent::buildRow($field_config);
+
+    if (!$field_config instanceof ThirdPartySettingsInterface) {
+      return $row;
+    }
 
     $collection = new FieldListDetailsCollection($field_config);
     $details = $collection->getDetails();

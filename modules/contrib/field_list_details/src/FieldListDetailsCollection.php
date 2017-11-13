@@ -38,9 +38,10 @@ class FieldListDetailsCollection {
   /**
    * FieldListDetailsCollection constructor.
    *
-   * @param FieldDefinitionInterface $field
+   * @param \Drupal\Core\Field\FieldDefinitionInterface $field
+   *   The field that is currently being inspected for details.
    */
-  function __construct($field) {
+  public function __construct(FieldDefinitionInterface $field) {
     $this->field = $field;
     $this->settings = $field->getSettings();
   }
@@ -49,8 +50,9 @@ class FieldListDetailsCollection {
    * Create and return a keyed array of field details.
    *
    * @return array
+   *   Array of details arrays.
    */
-  function getDetails(){
+  public function getDetails() {
 
     $this->setDetail('field_name', $this->field->getName());
 
@@ -87,11 +89,15 @@ class FieldListDetailsCollection {
   /**
    * Set a single detail in the collection.
    *
-   * @param $key
-   * @param $value
-   * @param null $label
+   * @param string $key
+   *   Unique key for the new detail being added. This allows for details to be
+   *   altered later.
+   * @param string $value
+   *   Some information about this field that will be shown to the user.
+   * @param string $label
+   *   The label for the field information.
    */
-  function setDetail($key, $value, $label = null) {
+  public function setDetail($key, $value, $label = NULL) {
     $detail = ['value' => $value];
 
     if ($label) {
@@ -102,23 +108,23 @@ class FieldListDetailsCollection {
   }
 
   /**
-   * Add the required detail
+   * Add the required detail.
    */
-  function addRequiredDetail() {
+  protected function addRequiredDetail() {
     $this->setDetail('required', $this->field->isRequired() ? $this->t('true') : $this->t('false'), $this->t('Required'));
   }
 
   /**
    * Add the field_type detail for datetime fields.
    */
-  function addDateTypeDetail() {
+  protected function addDateTypeDetail() {
     $this->setDetail('field_type', $this->settings['datetime_type'], $this->t('Date type'));
   }
 
   /**
    * Add the field_type detail for entity reference fields.
    */
-  function addEntityReferenceDetail() {
+  protected function addEntityReferenceDetail() {
     $value = $this->settings['target_type'];
 
     if (!empty($this->settings['handler_settings']['target_bundles'])) {
@@ -131,10 +137,9 @@ class FieldListDetailsCollection {
   /**
    * Add the field_type detail for file fields.
    */
-  function addFileDetail() {
-    if ($definition instanceof Drupal\Core\Config\Entity\ThirdPartySettingsInterface) {
-      $ffp = $definition->getThirdPartySettings('filefield_paths');
-    }
+  protected function addFileDetail() {
+    $ffp = $this->field->getThirdPartySettings('filefield_paths');
+    $active_updating = FALSE;
     $path = "{$this->settings['file_directory']}";
 
     if (!empty($ffp)) {
@@ -142,37 +147,37 @@ class FieldListDetailsCollection {
         $path = "{$ffp['file_path']['value']}/{$ffp['file_name']['value']}";
 
         if ($ffp['active_updating']) {
-          $details[] = ['value' => '-active updating-'];
+          $active_updating = TRUE;
         }
       }
     }
 
     $this->setDetail('field_type', "{$this->settings['uri_scheme']}://{$path}", $this->t('File'));
+
+    if ($active_updating) {
+      $this->setDetail('filefield_paths_active_updating', $this->t('On'), $this->t('FFP Active Updating'));
+    }
   }
 
   /**
-   * Add field_type detail about address fields
+   * Add field_type detail about address fields.
    */
-  function addAddressDetail() {
+  protected function addAddressDetail() {
     $this->setDetail('field_type', implode(', ', array_filter($this->settings['fields'])), $this->t('Address'));
   }
 
   /**
    * Add details about the field_encrypt module.
    */
-  function addFieldEncryptDetail() {
-    $settings = $this->field->getFieldStorageDefinition()->getThirdPartySettings('field_encrypt');
-    $definition = $this->field;
-    if ($definition instanceof Drupal\Core\Config\Entity\ThirdPartySettingsInterface) {
-      $settings = $definition->getThirdPartySettings('field_encrypt');
-    }
+  protected function addFieldEncryptDetail() {
+    $settings = $this->field->getThirdPartySettings('field_encrypt');
 
     if (!empty($settings)) {
       $details = [];
 
       foreach ($settings as $key => $value) {
         if (!is_array($value)) {
-          $details[] =  ucfirst($key) . ': ' . (string) $value;
+          $details[] = ucfirst($key) . ': ' . (string) $value;
         }
       }
 
@@ -183,7 +188,7 @@ class FieldListDetailsCollection {
   /**
    * Add field_cardinality detail. Assume 1 is default and not need to be shown.
    */
-  function addCardinalityDetail() {
+  protected function addCardinalityDetail() {
     $cardinality = $this->field->getFieldStorageDefinition()->getCardinality();
 
     if ($cardinality != 1) {
@@ -194,4 +199,5 @@ class FieldListDetailsCollection {
       $this->setDetail('field_cardinality', $cardinality, $this->t('Cardinality'));
     }
   }
+
 }
