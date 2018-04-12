@@ -3,10 +3,13 @@
 namespace Drupal\anonymous_login\EventSubscriber;
 
 use Drupal\Core\Config\ConfigFactory;
-use Drupal\Core\Path\CurrentPathStack;
+use Drupal\Core\Path\AliasManagerInterface;
 use Drupal\Core\Path\PathMatcher;
+use Drupal\Core\Path\PathValidatorInterface;
 use Drupal\Core\Session\AccountProxy;
-use Drupal\Core\State\State;
+use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\State\StateInterface;
+use Drupal\Core\Url;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -20,13 +23,6 @@ use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 class AnonymousLoginSubscriber implements EventSubscriberInterface {
 
   /**
-   * The current path for the current request.
-   *
-   * @var \Drupal\Core\Path\CurrentPathStack
-   */
-  protected $pathCurrent;
-
-  /**
    * The configuration object factory.
    *
    * @var \Drupal\Core\Config\ConfigFactory
@@ -36,7 +32,7 @@ class AnonymousLoginSubscriber implements EventSubscriberInterface {
   /**
    * The state system.
    *
-   * @var \Drupal\Core\State\State
+   * @var \Drupal\Core\State\StateInterface
    */
   protected $state;
 
@@ -55,6 +51,27 @@ class AnonymousLoginSubscriber implements EventSubscriberInterface {
   protected $pathMatcher;
 
   /**
+   * The path alias manager.
+   *
+   * @var \Drupal\Core\Path\AliasManagerInterface
+   */
+  protected $aliasManager;
+
+  /**
+   * The module handler.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
+   */
+  protected $moduleHandler;
+
+  /**
+   * The path validator service.
+   *
+   * @var \Drupal\Core\Path\PathValidatorInterface
+   */
+  protected $pathValidator;
+
+  /**
    * Paths textarea line break.
    *
    * @var string
@@ -64,23 +81,35 @@ class AnonymousLoginSubscriber implements EventSubscriberInterface {
   /**
    * Constructor of a new AnonymousLoginSubscriber.
    *
-   * @param \Drupal\Core\Path\CurrentPathStack $path_current
-   *   The current path for the current request.
    * @param \Drupal\Core\Config\ConfigFactory $config_factory
    *   The configuration object factory.
-   * @param \Drupal\Core\State\State $state
+   * @param \Drupal\Core\State\StateInterface $state
    *   The state system.
    * @param \Drupal\Core\Session\AccountProxy $current_user
    *   The instantiated account.
    * @param \Drupal\Core\Path\PathMatcher $path_matcher
    *   The path matcher.
+   * @param \Drupal\Core\Path\AliasManagerInterface $alias_manager
+   *   The path alias manager.
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   The module handler.
+   * @param \Drupal\Core\Path\PathValidatorInterface $path_validator
+   *   The path validator service.
    */
-  public function __construct(CurrentPathStack $path_current, ConfigFactory $config_factory, State $state, AccountProxy $current_user, PathMatcher $path_matcher) {
-    $this->pathCurrent = $path_current;
+  public function __construct(ConfigFactory $config_factory,
+                              StateInterface $state,
+                              AccountProxy $current_user,
+                              PathMatcher $path_matcher,
+                              AliasManagerInterface $alias_manager,
+                              ModuleHandlerInterface $module_handler,
+                              PathValidatorInterface $path_validator) {
     $this->configFactory = $config_factory;
     $this->state = $state;
     $this->currentUser = $current_user;
     $this->pathMatcher = $path_matcher;
+    $this->aliasManager = $alias_manager;
+    $this->moduleHandler = $module_handler;
+    $this->pathValidator = $path_validator;
   }
 
   /**
@@ -121,10 +150,14 @@ class AnonymousLoginSubscriber implements EventSubscriberInterface {
       return;
     }
 
+    // Get current request.
+    $request = $event->getRequest();
+
     // Determine the current path and alias.
+    $current_path = $request->getPathInfo();
     $current = [
-      'path' => $this->pathCurrent->getPath(),
-      'alias' => \Drupal::request()->getRequestUri(),
+      'path' => $current_path,
+      'alias' => $this->aliasManager->getAliasByPath($current_path),
     ];
 
     // Ignore PHP file requests.
@@ -132,8 +165,19 @@ class AnonymousLoginSubscriber implements EventSubscriberInterface {
       return;
     }
 
+    $login_page = '/user/login';
+
+    // Validate path to prevent system error if path doesn't exist
+    // or it was deleted for some reason.
+    $valid_url = $this->pathValidator
+      ->getUrlIfValidWithoutAccessCheck($this->configFactory->get('anonymous_login.settings')->get('login_path'));
+    if ($valid_url) {
+      // We use this method to get the path with current language prefix
+      // if site is multilingual.
+      $login_page = Url::fromUserInput('/' . $valid_url->getInternalPath())->toString();
+    }
+
     // Ignore the user login page.
-    $login_page = ($this->configFactory->get('anonymous_login.settings')->get('login_path')) ? $this->configFactory->get('anonymous_login.settings')->get('login_path') : '/user/login';
     if ($current['path'] == $login_page) {
       return;
     }
@@ -166,8 +210,13 @@ class AnonymousLoginSubscriber implements EventSubscriberInterface {
     if ($redirect) {
       // See if we have a message to display.
       if ($message = $this->configFactory->get('anonymous_login.settings')->get('message')) {
-        // @todo: translation?
         drupal_set_message($message);
+      }
+
+      // Remove destination parameter from current request
+      // to prevent double redirection.
+      if ($request->query->has('destination')) {
+        $request->query->remove('destination');
       }
 
       // Redirect to the login, keeping the requested alias as the destination.
@@ -222,7 +271,7 @@ class AnonymousLoginSubscriber implements EventSubscriberInterface {
     $paths['exclude'][] = 'cron/*';
 
     // Allow other modules to alter the paths.
-    \Drupal::moduleHandler()->alter('anonymous_login_paths', $paths);
+    $this->moduleHandler->alter('anonymous_login_paths', $paths);
 
     return $paths;
   }

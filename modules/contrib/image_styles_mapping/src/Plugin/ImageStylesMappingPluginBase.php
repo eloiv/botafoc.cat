@@ -46,7 +46,7 @@ abstract class ImageStylesMappingPluginBase extends PluginBase implements ImageS
    * {@inheritdoc}
    */
   public function getDependencies() {
-    return array('image');
+    return ['image'];
   }
 
   /**
@@ -60,14 +60,14 @@ abstract class ImageStylesMappingPluginBase extends PluginBase implements ImageS
    * {@inheritdoc}
    */
   public function getRowData(array $field_settings) {
-    return new FormattableMarkup('', array());
+    return new FormattableMarkup('', []);
   }
 
   /**
    * {@inheritdoc}
    */
   public function calculateDependencies() {
-    return array();
+    return [];
   }
 
   /**

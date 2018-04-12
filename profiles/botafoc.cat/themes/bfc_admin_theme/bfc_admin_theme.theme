@@ -7,3 +7,8 @@ function bfc_admin_theme_preprocess_html(&$variables) {
     $variables['attributes']['class'][]= 'path-user-login';
   }
 }
+
+function bfc_admin_theme_preprocess_install_page(&$variables) {
+  $info = system_get_info('module', 'system');
+  $variables['drupal_version'] = $info['version'];
+}

@@ -64,25 +64,25 @@ class AnonymousLoginSettings extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('anonymous_login.settings');
-    $form['paths'] = array(
+    $form['paths'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Page paths'),
       '#default_value' => $config->get('paths'),
       '#description' => $this->t('Enter a list of page paths that will force anonymous users to login before viewing. After logging in, they will be redirected back to the requested page. Enter each path on a different line. Wildcards (*) can be used. Prefix a path with ~ (tilde) to exclude it from being redirected.'),
-    );
-    $form['login_path'] = array(
+    ];
+    $form['login_path'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Login page path'),
       '#default_value' => ($config->get('login_path')) ? $config->get('login_path') : '/user/login',
       '#required' => TRUE,
       '#description' => $this->t('Enter the user login page path of your site.'),
-    );
-    $form['message'] = array(
+    ];
+    $form['message'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Login message'),
       '#default_value' => $config->get('message'),
       '#description' => $this->t('Optionally provide a message that will be shown to users when they are redirected to login.'),
-    );
+    ];
     return parent::buildForm($form, $form_state);
   }
 
@@ -93,13 +93,14 @@ class AnonymousLoginSettings extends ConfigFormBase {
     parent::validateForm($form, $form_state);
 
     // Login page path validation.
-    $path = $this->pathValidator->getUrlIfValid($form_state->getValue('login_path'));
+    $path = $this->pathValidator
+      ->getUrlIfValidWithoutAccessCheck($form_state->getValue('login_path'));
     if (!$path) {
       $form_state->setErrorByName('login_path', $this->t('Login page path is invalid. Check it please.'));
     }
     else {
-      // Set clean login page path.
-      $form_state->setValue('login_path', $path->toString());
+      // Set path without language prefix.
+      $form_state->setValue('login_path', '/' . $path->getInternalPath());
     }
   }
 

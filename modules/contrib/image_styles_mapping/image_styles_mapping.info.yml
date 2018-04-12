@@ -6,8 +6,8 @@ package: 'Administration'
 dependencies:
   - drupal:image
 
-# Information added by Drupal.org packaging script on 2016-06-04
-version: '8.x-1.1'
+# Information added by Drupal.org packaging script on 2018-02-17
+version: '8.x-1.2'
 core: '8.x'
 project: 'image_styles_mapping'
-datestamp: 1465055940
+datestamp: 1518865990

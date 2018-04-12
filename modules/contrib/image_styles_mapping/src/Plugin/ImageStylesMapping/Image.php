@@ -23,7 +23,7 @@ class Image extends ImageStylesMappingPluginBase implements ContainerFactoryPlug
    * {@inheritdoc}
    */
   public function getDependencies() {
-    return array('image');
+    return ['image'];
   }
 
   /**
@@ -37,7 +37,7 @@ class Image extends ImageStylesMappingPluginBase implements ContainerFactoryPlug
    * {@inheritdoc}
    */
   public function getRowData(array $field_settings) {
-    $image_styles = array();
+    $image_styles = [];
 
     foreach ($this->getImageStyles() as $image_style_name => $image_style_label) {
       // Use recursive search because the structure of the field_formatter is
@@ -56,7 +56,7 @@ class Image extends ImageStylesMappingPluginBase implements ContainerFactoryPlug
 
     $image_styles = implode(', ', $image_styles);
     // Use FormattableMarkup object to avoid link in plain text.
-    $image_styles = new FormattableMarkup($image_styles, array());
+    $image_styles = new FormattableMarkup($image_styles, []);
     return $image_styles;
   }
 
@@ -73,7 +73,7 @@ class Image extends ImageStylesMappingPluginBase implements ContainerFactoryPlug
       /** @var \Drupal\image\Entity\ImageStyle[] $image_styles_entities */
       $image_styles_entities = $this->entityTypeManager->getStorage('image_style')->loadMultiple();
 
-      $image_styles = array();
+      $image_styles = [];
       foreach ($image_styles_entities as $image_styles_entity) {
         // Get the info we seek from the image style entity.
         $image_styles[$image_styles_entity->get('name')] = $image_styles_entity->get('label');
@@ -102,7 +102,7 @@ class Image extends ImageStylesMappingPluginBase implements ContainerFactoryPlug
   public function displayImageStyleLink($image_style_label = '', $image_style_name = '') {
     // Prepare link.
     if ($image_style_label != '' && $image_style_name != '') {
-      $url = Url::fromRoute('entity.image_style.edit_form', array('image_style' => $image_style_name));
+      $url = Url::fromRoute('entity.image_style.edit_form', ['image_style' => $image_style_name]);
       $link_text = $image_style_label;
     }
     else {

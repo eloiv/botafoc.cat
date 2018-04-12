@@ -44,7 +44,7 @@ class ImageStylesMappingController extends ControllerBase {
   /**
    * Image styles mapping service Interface.
    *
-   * @var ImageStylesMappingServiceInterface
+   * @var \Drupal\image_styles_mapping\Service\ImageStylesMappingServiceInterface
    */
   protected $imageStylesMappingService;
 
@@ -79,10 +79,10 @@ class ImageStylesMappingController extends ControllerBase {
    */
   public function getAvailableReports() {
     // TODO: Remove the hardcoded reports, maybe using a plugin architecture.
-    return array(
+    return [
       'fieldsReport',
       'viewsFieldsReport',
-    );
+    ];
   }
 
   /**
@@ -137,7 +137,7 @@ class ImageStylesMappingController extends ControllerBase {
    */
   public function allReport() {
     $reports = $this->getAvailableReports();
-    $output = array();
+    $output = [];
 
     foreach ($reports as $report_name) {
       if ($this->isAvailableReport($report_name)) {
@@ -156,7 +156,7 @@ class ImageStylesMappingController extends ControllerBase {
    * @param array $rows
    *   Array of rows.
    *
-   * @return array $rows
+   * @return array
    *   Array of sorted rows.
    */
   public function sortRows(array $header, array $rows) {
@@ -201,19 +201,19 @@ class ImageStylesMappingController extends ControllerBase {
    *   A renderable array.
    */
   public function renderTable($h2_string, array $header, array $rows, $empty_string) {
-    $output = array();
-    $output[] = array(
+    $output = [];
+    $output[] = [
       '#type' => 'html_tag',
       '#tag' => 'h2',
       '#value' => $h2_string,
-    );
+    ];
 
-    $output[] = array(
+    $output[] = [
       '#theme' => 'table',
       '#header' => $header,
       '#rows' => $this->sortRows($header, $rows),
       '#empty' => $empty_string,
-    );
+    ];
 
     return $output;
   }

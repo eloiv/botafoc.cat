@@ -1,5 +1,5 @@
 modules_weight.list_page:
-  path: 'admin/config/system/modules-weight'
+  path: '/admin/config/system/modules-weight'
   defaults:
     _title: 'Modules Weight'
     _form: '\Drupal\modules_weight\Form\ModulesListForm'
@@ -9,9 +9,7 @@ modules_weight.list_page:
 modules_weight.modules_weight_admin_settings:
   path: '/admin/config/system/modules-weight/configuration'
   defaults:
-    _form: '\Drupal\modules_weight\Form\ModulesWeightAdminSettings'
     _title: 'Modules Weight Settings'
+    _form: '\Drupal\modules_weight\Form\ModulesWeightAdminSettings'    
   requirements:
     _permission: 'administer modules weight'
-  options:
-    _admin_route: TRUE

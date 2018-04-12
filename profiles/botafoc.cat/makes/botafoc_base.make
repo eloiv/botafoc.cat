@@ -133,3 +133,6 @@ projects[themable_forms][subdir] = contrib
 
 ; Performance
 ; projects[advagg][subdir] = contrib
+
+; features
+projects[basic_page][subdir] = features

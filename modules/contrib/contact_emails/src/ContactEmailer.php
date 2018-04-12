@@ -110,6 +110,7 @@ class ContactEmailer {
         $params['subject'] = $email->getSubject($this->contactMessage);
         $params['format'] = $email->getFormat($this->contactMessage);
         $params['message'] = $email->getBody($this->contactMessage);
+        $params['contact_message'] = $this->contactMessage;
 
         // Final prep and send.
         $langcode = $this->currentUser->getPreferredLangcode();

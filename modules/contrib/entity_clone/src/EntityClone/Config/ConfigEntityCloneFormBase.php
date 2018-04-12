@@ -5,7 +5,7 @@ namespace Drupal\entity_clone\EntityClone\Config;
 use Drupal\Core\Entity\EntityHandlerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslationManager;
 use Drupal\entity_clone\EntityClone\EntityCloneFormInterface;
@@ -17,23 +17,28 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class ConfigEntityCloneFormBase implements EntityHandlerInterface, EntityCloneFormInterface {
 
   /**
-   * The entity type manager.
+   * The string translation.
    *
    * @var \Drupal\Core\StringTranslation\TranslationManager
    */
   protected $translationManager;
 
+  /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
   protected $entityTypeManager;
 
   /**
    * Constructs a new ConfigEntityCloneFormBase.
    *
-   * @param \Drupal\Core\Entity\EntityTypeManager $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    * @param \Drupal\Core\StringTranslation\TranslationManager $translation_manager
    *   The string translation manager.
    */
-  public function __construct(EntityTypeManager $entity_type_manager, TranslationManager $translation_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, TranslationManager $translation_manager) {
     $this->entityTypeManager = $entity_type_manager;
     $this->translationManager = $translation_manager;
   }

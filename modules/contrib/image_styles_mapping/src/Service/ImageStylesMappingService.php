@@ -2,6 +2,7 @@
 
 namespace Drupal\image_styles_mapping\Service;
 
+use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
@@ -40,6 +41,13 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
   protected $entityTypeManager;
 
   /**
+   * An array of bundle information.
+   *
+   * @var array
+   */
+  protected $bundleInfo;
+
+  /**
    * Constructs an ImageStylesMappingService object.
    *
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
@@ -48,11 +56,19 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
    *   The image styles mapping plugin manager.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entity_type_bundle_info
+   *   The entity bundle info service.
    */
-  public function __construct(ModuleHandlerInterface $module_handler, ImageStylesMappingPluginManager $image_styles_mapping_plugin_manager, EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct(
+    ModuleHandlerInterface $module_handler,
+    ImageStylesMappingPluginManager $image_styles_mapping_plugin_manager,
+    EntityTypeManagerInterface $entity_type_manager,
+    EntityTypeBundleInfoInterface $entity_type_bundle_info
+  ) {
     $this->moduleHandler = $module_handler;
     $this->imageStylesMappingPluginManager = $image_styles_mapping_plugin_manager;
     $this->entityTypeManager = $entity_type_manager;
+    $this->bundleInfo = $entity_type_bundle_info->getAllBundleInfo();
   }
 
   /**
@@ -62,12 +78,13 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
     // Get active image styles mapping plugins.
     $active_image_styles_mapping_plugins = $this->getActiveImageStylesMappingPlugins();
 
-    $header = array(
-      array('data' => $this->t('Entity'), 'field' => 'entity_type'),
-      array('data' => $this->t('Bundle'), 'field' => 'bundle'),
-      array('data' => $this->t('View mode'), 'field' => 'view_mode'),
-      array('data' => $this->t('Field'), 'field' => 'field'),
-    );
+    $header = [
+      ['data' => $this->t('Entity'), 'field' => 'entity_type'],
+      ['data' => $this->t('Bundle machine name'), 'field' => 'bundle'],
+      ['data' => $this->t('Bundle label'), 'field' => 'bundle_name'],
+      ['data' => $this->t('View mode'), 'field' => 'view_mode'],
+      ['data' => $this->t('Field'), 'field' => 'field'],
+    ];
 
     // Add the plugins header.
     foreach ($active_image_styles_mapping_plugins as $plugin) {
@@ -77,21 +94,22 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
     /** @var \Drupal\Core\Entity\Entity\EntityViewDisplay[] $entity_view_display_entities */
     $entity_view_display_entities = $this->entityTypeManager->getStorage('entity_view_display')->loadMultiple();
 
-    $rows = array();
+    $rows = [];
     foreach ($entity_view_display_entities as $entity_view_display_entity) {
       // Search for the image fields displayed in the view display.
       foreach ($entity_view_display_entity->get('content') as $field_name => $field_display) {
-        if (isset($field_display['type']) && in_array($field_display['type'], array('image', 'responsive_image'))) {
+        if (isset($field_display['type']) && in_array($field_display['type'], ['image', 'responsive_image'])) {
           $entity_type = $entity_view_display_entity->get('targetEntityType');
           $bundle = $entity_view_display_entity->get('bundle');
           $view_mode = $entity_view_display_entity->get('mode');
 
-          $row = array(
+          $row = [
             'entity_type' => $entity_type,
             'bundle' => $bundle,
+            'bundle_name' => $this->bundleInfo[$entity_type][$bundle]['label'],
             'view_mode' => $this->displayViewModeLink($entity_type, $bundle, $view_mode),
             'field' => $field_name,
-          );
+          ];
 
           // Add the plugins row data.
           foreach ($active_image_styles_mapping_plugins as $plugin) {
@@ -103,7 +121,7 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
       }
     }
 
-    return array('header' => $header, 'rows' => $rows);
+    return ['header' => $header, 'rows' => $rows];
   }
 
   /**
@@ -117,18 +135,18 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
     /** @var \Drupal\views\Entity\View[] $views */
     $views = $this->entityTypeManager->getStorage('view')->loadMultiple();
 
-    $header = array(
-      array('data' => $this->t('View'), 'field' => 'view'),
-      array('data' => $this->t('View display'), 'field' => 'view_display'),
-      array('data' => $this->t('Field'), 'field' => 'field'),
-    );
+    $header = [
+      ['data' => $this->t('View'), 'field' => 'view'],
+      ['data' => $this->t('View display'), 'field' => 'view_display'],
+      ['data' => $this->t('Field'), 'field' => 'field'],
+    ];
 
     // Add the plugins header.
     foreach ($active_image_styles_mapping_plugins as $plugin) {
       $header[] = $plugin->getHeader();
     }
 
-    $rows = array();
+    $rows = [];
     // Fetch all fields which are used in views.
     // Therefore search in all views, displays and handler-types.
     foreach ($views as $view) {
@@ -138,11 +156,11 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
           foreach ($display['display_options']['fields'] as $field_machine_name => $field) {
             // Image field.
             if ($this->fieldIsImageField($field_machine_name)) {
-              $row = array(
+              $row = [
                 'view' => $view->get('label'),
                 'view_display' => $this->viewDisplayLink($view->get('id'), $display_id, $display['display_title']),
                 'field' => $field_machine_name,
-              );
+              ];
 
               // Add the plugins row data.
               foreach ($active_image_styles_mapping_plugins as $plugin) {
@@ -156,7 +174,7 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
       }
     }
 
-    return array('header' => $header, 'rows' => $rows);
+    return ['header' => $header, 'rows' => $rows];
   }
 
   /**
@@ -172,7 +190,7 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
       /** @var \Drupal\field\Entity\FieldConfig[] $field_instance_config_entities */
       $field_instance_config_entities = $this->entityTypeManager->getStorage('field_config')->loadMultiple();
 
-      $image_fields = array();
+      $image_fields = [];
       foreach ($field_instance_config_entities as $field_instance_config_entity) {
         // Restrict to image fields.
         if ($field_instance_config_entity->get('field_type') == 'image') {
@@ -243,9 +261,9 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
     $entity_type_object = $this->entityTypeManager->getDefinition($entity_type);
 
     // Prepare URL parameters.
-    $parameters = array(
+    $parameters = [
       'view_mode_name' => $view_mode,
-    );
+    ];
     $parameters += FieldUI::getRouteBundleParameter($entity_type_object, $bundle);
 
     // Route.
@@ -284,10 +302,10 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
     if ($this->moduleHandler->moduleExists('views_ui')) {
       // Prepare link.
       if ($display_title == 'Master') {
-        $url = Url::fromRoute('entity.view.edit_form', array('view' => $view_id));
+        $url = Url::fromRoute('entity.view.edit_form', ['view' => $view_id]);
       }
       else {
-        $url = Url::fromRoute('entity.view.edit_display_form', array('view' => $view_id, 'display_id' => $display_id));
+        $url = Url::fromRoute('entity.view.edit_display_form', ['view' => $view_id, 'display_id' => $display_id]);
       }
 
       // Use the routing system to check access.
@@ -309,14 +327,14 @@ class ImageStylesMappingService implements ImageStylesMappingServiceInterface {
    * Get the image styles mapping plugin which dependencies are enabled.
    */
   public function getActiveImageStylesMappingPlugins() {
-    $active_image_styles_mapping_plugins = array();
+    $active_image_styles_mapping_plugins = [];
 
     // Get the plugins.
     $image_styles_mapping_plugins_definitions = $this->imageStylesMappingPluginManager->getDefinitions();
     foreach ($image_styles_mapping_plugins_definitions as $plugin_id => $plugin_definition) {
       $dependencies = TRUE;
       // Instantiate the plugin.
-      $plugin = $this->imageStylesMappingPluginManager->createInstance($plugin_id, array());
+      $plugin = $this->imageStylesMappingPluginManager->createInstance($plugin_id, []);
       // Check dependencies.
       foreach ($plugin->getDependencies() as $module_name) {
         if (!$this->moduleHandler->moduleExists($module_name)) {

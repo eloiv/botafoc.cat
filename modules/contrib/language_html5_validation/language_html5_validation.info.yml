@@ -3,8 +3,8 @@ description: 'Apply HTML5 validation in all forms with drupal language navegatio
 type: module
 # core: 8.x
 
-# Information added by Drupal.org packaging script on 2017-07-25
+# Information added by Drupal.org packaging script on 2018-01-08
 version: '8.x-1.x-dev'
 core: '8.x'
 project: 'language_html5_validation'
-datestamp: 1501011249
+datestamp: 1515442387

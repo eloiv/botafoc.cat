@@ -3,7 +3,7 @@
 namespace Drupal\entity_clone\Plugin\Derivative;
 
 use Drupal\Component\Plugin\Derivative\DeriverBase;
-use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\Discovery\ContainerDeriverInterface;
 use Drupal\Core\StringTranslation\TranslationManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -16,7 +16,7 @@ class DynamicLocalTasks extends DeriverBase implements ContainerDeriverInterface
   /**
    * The entity type manager.
    *
-   * @var \Drupal\Core\Entity\EntityTypeManager
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityTypeManager;
 
@@ -30,12 +30,12 @@ class DynamicLocalTasks extends DeriverBase implements ContainerDeriverInterface
   /**
    * Constructs a new DynamicLocalTasks.
    *
-   * @param \Drupal\Core\Entity\EntityTypeManager $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    * @param \Drupal\Core\StringTranslation\TranslationManager $string_translation
    *   The translation manager.
    */
-  public function __construct(EntityTypeManager $entity_type_manager, TranslationManager $string_translation) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, TranslationManager $string_translation) {
     $this->entityTypeManager = $entity_type_manager;
     $this->translationManager = $string_translation;
   }

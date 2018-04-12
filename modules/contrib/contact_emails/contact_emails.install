@@ -5,7 +5,6 @@
  * Contact emails database table.
  */
 
-use Drupal\Core\Database\Database;
 use Drupal\contact_emails\Entity\ContactEmail;
 use Drupal\Core\Field\BaseFieldDefinition;
 
@@ -13,7 +12,7 @@ use Drupal\Core\Field\BaseFieldDefinition;
  * Modify how the recipient type is stored.
  */
 function contact_emails_update_8001(&$sandbox) {
-  $connection = Database::getConnection();
+  $connection = \Drupal::database();
   $schema = $connection->schema();
 
   if ($connection->schema()->tableExists('contact_message_email_settings')) {
@@ -70,7 +69,7 @@ function contact_emails_update_8001(&$sandbox) {
  * Modify how the recipient type is stored.
  */
 function contact_emails_update_8002(&$sandbox) {
-  $connection = Database::getConnection();
+  $connection = \Drupal::database();
   $schema = $connection->schema();
 
   if ($connection->schema()->tableExists('contact_message_email_settings')) {
@@ -94,8 +93,8 @@ function contact_emails_update_8002(&$sandbox) {
  * Modify how the recipient type is stored.
  */
 function contact_emails_update_8003(&$sandbox) {
-  $connection = Database::getConnection();
-  $schema = $database->schema();
+  $connection = \Drupal::database();
+  $schema = $connection->schema();
 
   if ($connection->schema()->tableExists('contact_message_email_settings')) {
 
@@ -164,7 +163,7 @@ function contact_emails_update_8004(&$sandbox) {
  * Migrate the contact emails table to the contact emails entity table.
  */
 function contact_emails_update_8005(&$sandbox) {
-  $connection = Database::getConnection();
+  $connection = \Drupal::database();
 
   // Ensure the new entity type is installed on update. It is installed
   // automatically on a fresh install.
@@ -240,13 +239,18 @@ function contact_emails_update_8005(&$sandbox) {
  * safely without issue.
  */
 function contact_emails_update_8006(&$sandbox) {
+  $updateManager = \Drupal::entityDefinitionUpdateManager();
+
+  $existing_message_storage_definition = $updateManager
+    ->getFieldStorageDefinition('message', 'contact_email');
+
+  $existing_body_storage_definition = $updateManager
+    ->getFieldStorageDefinition('body', 'contact_email');
 
   // Initialize the batch update.
   if (!isset($sandbox['progress'])) {
 
     // Ensure we don't yet have a contact email message field.
-    $existing_message_storage_definition = \Drupal::entityDefinitionUpdateManager()
-      ->getFieldStorageDefinition('message', 'contact_email');
     if (!$existing_message_storage_definition) {
 
       // Install the new field storage definition for message.
@@ -266,100 +270,93 @@ function contact_emails_update_8006(&$sandbox) {
             'rows' => 4,
           ],
         ]);
-      \Drupal::entityDefinitionUpdateManager()
-        ->installFieldStorageDefinition('message', 'contact_email', 'contact_email', $storage_definition);
 
+      $updateManager->installFieldStorageDefinition('message', 'contact_email', 'contact_email', $storage_definition);
     }
 
     // This must be the first run. Initialize the sandbox.
     $sandbox['progress'] = 0;
     $sandbox['current_id'] = 0;
-    $sandbox['max'] = 0;
 
-    // Ensure we still have the body field on the contact email, if not we have
-    // nothing to do.
-    $existing_body_storage_definition = \Drupal::entityDefinitionUpdateManager()
-      ->getFieldStorageDefinition('body', 'contact_email');
-    $sandbox['max'] = \Drupal::entityQuery('contact_email')
-      ->count()
-      ->execute();
+    // Count the contact emails.
+    $sandbox['max'] = \Drupal::entityQuery('contact_email')->count()->execute();
   }
 
-  if ($sandbox['max']) {
-
+  if (!empty($sandbox['max'])) {
     // Update in chunks of 10.
     $contact_email_ids = \Drupal::entityQuery('contact_email')
+      ->condition('email_id', $sandbox['current_id'], '>')
       ->range(0, 10)
       ->execute();
-    if ($contact_email_ids) {
-      $connection = Database::getConnection();
-      $contact_emails = \Drupal::entityTypeManager()
-        ->getStorage('contact_email')
-        ->loadMultiple($contact_email_ids);
-      foreach ($contact_emails as $contact_email) {
-        $message = [];
 
-        // Move the body into the message. The body no longer exists in the
-        // definition so we must get it with a query.
-        if ($connection->schema()->fieldExists('contact_email_field_data', 'body')) {
-          $fields = $connection->select('contact_email_field_data', 'c')
-            ->fields('c', ['body'])
-            ->condition('c.email_id', $contact_email->id(), '=')
-            ->execute()
-            ->fetchObject();
-          if ($fields && !empty($fields->body)) {
+    $connection = \Drupal::database();
+    $contact_emails = \Drupal::entityTypeManager()
+      ->getStorage('contact_email')
+      ->loadMultiple($contact_email_ids);
 
-            // The format and value were previously stored in a serialized array
-            // in the single column.
-            $unserialised_body = unserialize($fields->body);
-            if (isset($unserialised_body['format']) && isset($unserialised_body['value'])) {
-              $message = [
-                'value' => $unserialised_body['value'],
-                'format' => $unserialised_body['format'],
-              ];
-            }
+    foreach ($contact_emails as $contact_email) {
+      $message = [];
+
+      // Move the body into the message. The body no longer exists in the
+      // definition so we must get it with a query.
+      if ($connection->schema()->fieldExists('contact_email_field_data', 'body')) {
+        $fields = $connection->select('contact_email_field_data', 'c')
+          ->fields('c', ['body'])
+          ->condition('c.email_id', $contact_email->id(), '=')
+          ->execute()
+          ->fetchObject();
+
+        if ($fields && !empty($fields->body)) {
+
+          // The format and value were previously stored in a serialized array
+          // in the single column.
+          $unserialised_body = unserialize($fields->body);
+          if (isset($unserialised_body['format'], $unserialised_body['value'])) {
+            $message = [
+              'value' => $unserialised_body['value'],
+              'format' => $unserialised_body['format'],
+            ];
           }
         }
-
-        // In case the user ran entity-updates prior to updb.
-        if (!isset($message['value']) && $connection->schema()->fieldExists('contact_email_field_data', 'message__value')) {
-          $fields = $connection->select('contact_email_field_data', 'c')
-            ->fields('c', ['message__value', 'message__format'])
-            ->condition('c.email_id', $contact_email->id(), '=')
-            ->execute()
-            ->fetchObject();
-          if ($fields && !empty($fields->message__value)) {
-            $unserialised_body = unserialize($fields->message__value);
-            if (isset($unserialised_body['format']) && isset($unserialised_body['value'])) {
-              $message = [
-                'value' => $unserialised_body['value'],
-                'format' => $unserialised_body['format'],
-              ];
-            }
-          }
-        }
-
-        // Save the new message format to the contact email.
-        if (isset($message['value'])) {
-          $contact_email->set('message', $message);
-          $contact_email->save();
-        }
-
-        $sandbox['progress']++;
-        $sandbox['current_id'] = $contact_email->id();
       }
+
+      // In case the user ran entity-updates prior to updb.
+      if (!isset($message['value']) && $connection->schema()->fieldExists('contact_email_field_data', 'message__value')) {
+        $fields = $connection->select('contact_email_field_data', 'c')
+          ->fields('c', ['message__value', 'message__format'])
+          ->condition('c.email_id', $contact_email->id(), '=')
+          ->execute()
+          ->fetchObject();
+        if ($fields && !empty($fields->message__value)) {
+          $unserialised_body = unserialize($fields->message__value);
+          if (isset($unserialised_body['format']) && isset($unserialised_body['value'])) {
+            $message = [
+              'value' => $unserialised_body['value'],
+              'format' => $unserialised_body['format'],
+            ];
+          }
+        }
+      }
+
+      // Save the new message format to the contact email.
+      if (isset($message['value'])) {
+        $contact_email->set('message', $message);
+        $contact_email->save();
+      }
+
+      $sandbox['progress']++;
+      $sandbox['current_id'] = $contact_email->id();
     }
 
     $sandbox['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['progress'] / $sandbox['max']);
-
   }
   else {
     $sandbox['#finished'] = 1;
   }
 
-  // Finalise updates, deleting the old body.
-  \Drupal::entityDefinitionUpdateManager()->applyUpdates();
+  if ($existing_body_storage_definition && $sandbox['#finished'] >= 1) {
+    $updateManager->uninstallFieldStorageDefinition($existing_body_storage_definition);
+  }
 
   return t('All emails have have the serialised body field converted to the message field for compatibility with rest API. ** If you extended or used the body field with your own bespoke module, you must update your code appropriately to use "message" instead of "body". If you have been using this module as is, this update will apply safely without issue. **');
-
 }

@@ -2,13 +2,16 @@
 
 namespace Drupal\entity_clone\Form;
 
-use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Entity\Entity;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\TranslationManager;
+use Drupal\entity_clone\Event\EntityCloneEvent;
+use Drupal\entity_clone\Event\EntityCloneEvents;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Implements an entity Clone form.
@@ -18,7 +21,7 @@ class EntityCloneForm extends FormBase {
   /**
    * The entity type manager.
    *
-   * @var \Drupal\Core\Entity\EntityTypeManager
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityTypeManager;
 
@@ -44,27 +47,36 @@ class EntityCloneForm extends FormBase {
   protected $stringTranslationManager;
 
   /**
+   * Event dispatcher service.
+   *
+   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   */
+  protected $eventDispatcher;
+
+  /**
    * Constructs a new Entity Clone form.
    *
-   * @param \Drupal\Core\Entity\EntityTypeManager $entity_type_manager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
    *   The route match service.
    * @param \Drupal\Core\StringTranslation\TranslationManager $string_translation
    *   The string translation manager.
+   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $eventDispatcher
+   *   The event dispatcher service.
    *
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public function __construct(EntityTypeManager $entity_type_manager, RouteMatchInterface $route_match, TranslationManager $string_translation) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, RouteMatchInterface $route_match, TranslationManager $string_translation, EventDispatcherInterface $eventDispatcher) {
     $this->entityTypeManager = $entity_type_manager;
     $this->stringTranslationManager = $string_translation;
+    $this->eventDispatcher = $eventDispatcher;
 
     $parameter_name = $route_match->getRouteObject()->getOption('_entity_clone_entity_type_id');
     $this->entity = $route_match->getParameter($parameter_name);
 
     $this->entityTypeDefinition = $entity_type_manager->getDefinition($this->entity->getEntityTypeId());
   }
-
 
   /**
    * {@inheritdoc}
@@ -73,7 +85,8 @@ class EntityCloneForm extends FormBase {
     return new static(
       $container->get('entity_type.manager'),
       $container->get('current_route_match'),
-      $container->get('string_translation')
+      $container->get('string_translation'),
+      $container->get('event_dispatcher')
     );
   }
 
@@ -110,7 +123,7 @@ class EntityCloneForm extends FormBase {
       $form['abort'] = [
         '#type' => 'submit',
         '#value' => 'Abort',
-        '#submit' => '::cancelForm',
+        '#submit' => ['::cancelForm'],
       ];
     }
 
@@ -137,7 +150,11 @@ class EntityCloneForm extends FormBase {
       $properties = $entity_clone_form_handler->getNewValues($form_state);
     }
 
-    $cloned_entity = $entity_clone_handler->cloneEntity($this->entity, $this->entity->createDuplicate(), $properties);
+    $duplicate = $this->entity->createDuplicate();
+
+    $this->eventDispatcher->dispatch(EntityCloneEvents::PRE_CLONE, new EntityCloneEvent($this->entity, $duplicate, $properties));
+    $cloned_entity = $entity_clone_handler->cloneEntity($this->entity, $duplicate, $properties);
+    $this->eventDispatcher->dispatch(EntityCloneEvents::POST_CLONE, new EntityCloneEvent($this->entity, $duplicate, $properties));
 
     drupal_set_message($this->stringTranslationManager->translate('The entity <em>@entity (@entity_id)</em> of type <em>@type</em> was cloned', [
       '@entity' => $this->entity->label(),
@@ -145,12 +162,7 @@ class EntityCloneForm extends FormBase {
       '@type' => $this->entity->getEntityTypeId(),
     ]));
 
-    if ($cloned_entity && $cloned_entity->hasLinkTemplate('canonical')) {
-      $form_state->setRedirect($cloned_entity->toUrl()
-        ->getRouteName(), $cloned_entity->toUrl()->getRouteParameters());
-    }
-
-    $form_state->setRedirect('<front>');
+    $this->formSetRedirect($form_state, $cloned_entity);
   }
 
   /**
@@ -162,7 +174,24 @@ class EntityCloneForm extends FormBase {
    *   The current state of the form.
    */
   public function cancelForm(array &$form, FormStateInterface $form_state) {
-    $form_state->setRedirect('<front>');
+    $this->formSetRedirect($form_state, $this->entity);
+  }
+
+  /**
+   * Set a redirect on form state.
+   *
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The cloned entity.
+   */
+  protected function formSetRedirect(FormStateInterface $form_state, EntityInterface $entity) {
+    if ($entity && $entity->hasLinkTemplate('canonical')) {
+      $form_state->setRedirect($entity->toUrl()->getRouteName(), $entity->toUrl()->getRouteParameters());
+    }
+    else {
+      $form_state->setRedirect('<front>');
+    }
   }
 
 }

@@ -3,6 +3,7 @@ CONTENTS OF THIS FILE
 
  * Introduction
  * Requirements
+ * Recommended modules
  * Installation
  * Configuration
  * Maintainers
@@ -28,6 +29,14 @@ REQUIREMENTS
 ------------
 
 No special requirements.
+
+
+RECOMMENDED MODULES
+-------------------
+
+ * Drush Help (https://www.drupal.org/project/drush_help):
+   Improves the module help page showing information about the module drush
+   commands.
 
 
 INSTALLATION

@@ -33,12 +33,12 @@ class SelectConfigurationForm extends FormBase {
       '#open' => TRUE,
     );
 
-    $form['content_types']['article'] = array(
+    /*$form['content_types']['article'] = array(
       '#type' => 'checkbox',
       '#title' => t('Article'),
       '#description' => t('Use <em>articles</em> for time-sensitive content like news, press releases or blog posts.'),
       '#default_value' => FALSE,
-    );
+    );*/
     $form['content_types']['page'] = array(
       '#type' => 'checkbox',
       '#title' => t('Page'),
@@ -49,6 +49,7 @@ class SelectConfigurationForm extends FormBase {
     $form['roles'] = array(
       '#type' => 'details',
       '#title' => t('Roles'),
+      '#open' => TRUE,
     );
 
     $form['roles']['editor'] = array(
@@ -103,7 +104,9 @@ class SelectConfigurationForm extends FormBase {
       $this->_move_all_config_files_directory('article');
     }
     if ($form_state->getValue('page') == 1) {
-      $this->_move_all_config_files_directory('page');
+      $build_info = $form_state->getBuildInfo();
+      $build_info['args'][0]['parameters']['features'][] = 'basic_page';
+      $form_state->setBuildInfo($build_info);
     }
 
     $build_info = $form_state->getBuildInfo();

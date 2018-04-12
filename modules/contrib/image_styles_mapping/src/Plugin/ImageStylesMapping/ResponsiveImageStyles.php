@@ -23,7 +23,7 @@ class ResponsiveImageStyles extends ImageStylesMappingPluginBase implements Cont
    * {@inheritdoc}
    */
   public function getDependencies() {
-    return array('responsive_image');
+    return ['responsive_image'];
   }
 
   /**
@@ -37,7 +37,7 @@ class ResponsiveImageStyles extends ImageStylesMappingPluginBase implements Cont
    * {@inheritdoc}
    */
   public function getRowData(array $field_settings) {
-    $responsive_image_styles = array();
+    $responsive_image_styles = [];
 
     foreach ($this->getResponsiveImageStyles() as $responsive_image_style_id => $responsive_image_style_label) {
       // Use recursive search because the structure of the field_formatter is
@@ -56,7 +56,7 @@ class ResponsiveImageStyles extends ImageStylesMappingPluginBase implements Cont
 
     $responsive_image_styles = implode(', ', $responsive_image_styles);
     // Use FormattableMarkup object to avoid link in plain text.
-    $responsive_image_styles = new FormattableMarkup($responsive_image_styles, array());
+    $responsive_image_styles = new FormattableMarkup($responsive_image_styles, []);
     return $responsive_image_styles;
   }
 
@@ -73,7 +73,7 @@ class ResponsiveImageStyles extends ImageStylesMappingPluginBase implements Cont
       /** @var \Drupal\responsive_image\Entity\ResponsiveImageStyle[] $responsive_image_style_entities */
       $responsive_image_style_entities = $this->entityTypeManager->getStorage('responsive_image_style')->loadMultiple();
 
-      $responsive_image_styles = array();
+      $responsive_image_styles = [];
       foreach ($responsive_image_style_entities as $responsive_image_style_entity) {
         // Get the info we seek from the responsive image styles entity.
         $responsive_image_styles[$responsive_image_style_entity->get('id')] = $responsive_image_style_entity->get('label');
@@ -104,7 +104,7 @@ class ResponsiveImageStyles extends ImageStylesMappingPluginBase implements Cont
   public function displayResponsiveImageStyleLink($responsive_image_style_label = '', $responsive_image_style_id = '') {
     // Prepare link.
     if ($responsive_image_style_label != '' && $responsive_image_style_id != '') {
-      $url = Url::fromRoute('entity.responsive_image_style.edit_form', array('responsive_image_style' => $responsive_image_style_id));
+      $url = Url::fromRoute('entity.responsive_image_style.edit_form', ['responsive_image_style' => $responsive_image_style_id]);
       $link_text = $responsive_image_style_label;
     }
     else {

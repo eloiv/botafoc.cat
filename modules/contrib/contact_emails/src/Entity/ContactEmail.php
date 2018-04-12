@@ -357,7 +357,7 @@ class ContactEmail extends ContentEntityBase implements ContactEmailInterface {
       // text.
       $restrictions = $filter_format->getHtmlRestrictions();
 
-      if (!$restrictions['allowed']) {
+      if ($restrictions && !$restrictions['allowed']) {
         $format = 'text/plain; charset=UTF-8; format=flowed; delsp=yes';
       }
     }

@@ -137,6 +137,12 @@ function install_last_configuration(&$install_state) {
     \Drupal::service('module_installer')->install(['config_translation']);
   }
 
+  if(!empty($_GET['features'])) {
+    foreach($_GET['features'] as $key => $feature) {
+      \Drupal::service('module_installer')->install([$feature]);
+    }
+  }
+
   drupal_flush_all_caches();
 }
 
@@ -183,8 +189,10 @@ function botafoc_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_s
 
     $form['regional_settings']['#type'] = 'details';
     $form['regional_settings']['#weight'] = 5;
+    $form['regional_settings']['#open'] = TRUE;
     $form['update_notifications']['#type'] = 'details';
     $form['update_notifications']['#weight'] = 6;
+    $form['update_notifications']['#open'] = TRUE;
   }
 }
 
